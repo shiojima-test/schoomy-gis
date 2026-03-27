@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SchooMy 学校環境比較マップ — 視点モード</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+:root{--bg:#f0f4f8;--panel:#fff;--panel2:#f5f8fb;--border:#dde4ec;--text:#1a2433;--text2:#4a6080;--text3:#8faabb;--teal:#3AABA8;--teal2:#2a8a87;--teal-bg:rgba(58,171,168,.09);--orange:#E88A0A;--jp:#e8526a;--jp-bg:rgba(232,82,106,.1);--id:#3A9BE8;--id-bg:rgba(58,155,232,.1);--shadow:0 4px 20px rgba(0,0,0,.10);--pov-color:#e8526a;--pov-bg:rgba(232,82,106,.08)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans JP','Meiryo',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{height:56px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.07);z-index:1000}
+.logo{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;letter-spacing:.06em;padding:5px 11px;border-radius:7px;flex-shrink:0}
+.htitle{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;white-space:nowrap}
+.sep{width:1px;height:22px;background:var(--border);flex-shrink:0}
+.main{display:flex;flex:1;overflow:hidden;position:relative}
+#map{flex:1}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">SchooMy</div>
+<div class="sep"></div>
+<span class="htitle">学校環境比較マップ v3</span>
+</header>
+<div class="main">
+<div id="map"></div>
+</div>
+<script>
+var map = L.map('map',{center:[0,115],zoom:4}).setView([0,115],4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
+var SCHOOLS=[
+{name:'静岡サレジオ高校',lat:34.9756,lng:138.3828,country:'JP'},
+{name:'山梨学院高校',lat:35.6622,lng:138.5686,country:'JP'},
+{name:'鶴岡工業高等専門学校',lat:38.7142,lng:139.8298,country:'JP'},
+{name:'SDH Cikarang',lat:-6.3466,lng:107.1568,country:'ID'},
+{name:'SDH Lippo Village',lat:-6.2256,lng:106.6193,country:'ID'},
+{name:'SDH Daan Mogot',lat:-6.1677,lng:106.7469,country:'ID'},
+{name:'SDH Makassar',lat:-5.163,lng:119.434,country:'ID'},
+{name:'SDH Ranotana',lat:1.4754,lng:124.8272,country:'ID'},
+{name:'SDH Medan',lat:3.5912,lng:98.6739,country:'ID'},
+{name:'SDH Bogor',lat:-6.589,lng:106.808,country:'ID'},
+{name:'SDH Jogja',lat:-7.7875,lng:110.369,country:'ID'},
+{name:'SDH Surabaya',lat:-7.3265,lng:112.734,country:'ID'},
+{name:'SDH Ambon',lat:-3.6954,lng:128.181,country:'ID'},
+{name:'SDH Kupang',lat:-10.177,lng:123.607,country:'ID'}
+];
+SCHOOLS.forEach(function(s){
+var col=s.country==='JP'?'#e8526a':'#3A9BE8';
+var flag=s.country==='JP'?'🇯🇵':'🇮🇩';
+L.circleMarker([s.lat,s.lng],{radius:8,color:col,fillColor:col,fillOpacity:0.7}).addTo(map).bindPopup('<b>'+flag+' '+s.name+'</b>');
+});
+</script>
+</body>
+</html>
