@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -8,50 +9,213 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
-:root{--bg:#f0f4f8;--panel:#fff;--panel2:#f5f8fb;--border:#dde4ec;--text:#1a2433;--text2:#4a6080;--text3:#8faabb;--teal:#3AABA8;--teal2:#2a8a87;--teal-bg:rgba(58,171,168,.09);--orange:#E88A0A;--jp:#e8526a;--jp-bg:rgba(232,82,106,.1);--id:#3A9BE8;--id-bg:rgba(58,155,232,.1);--shadow:0 4px 20px rgba(0,0,0,.10);--pov-color:#e8526a;--pov-bg:rgba(232,82,106,.08)}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Noto Sans JP','Meiryo',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{height:56px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.07);z-index:1000}
-.logo{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;letter-spacing:.06em;padding:5px 11px;border-radius:7px;flex-shrink:0}
-.htitle{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;white-space:nowrap}
-.sep{width:1px;height:22px;background:var(--border);flex-shrink:0}
-.main{display:flex;flex:1;overflow:hidden;position:relative}
-#map{flex:1}
+:root {
+  --bg:#f0f4f8; --panel:#fff; --panel2:#f5f8fb; --border:#dde4ec;
+  --text:#1a2433; --text2:#4a6080; --text3:#8faabb;
+  --teal:#3AABA8; --teal2:#2a8a87; --teal-bg:rgba(58,171,168,.09);
+  --orange:#E88A0A; --jp:#e8526a; --jp-bg:rgba(232,82,106,.1);
+  --id:#3A9BE8;   --id-bg:rgba(58,155,232,.1);
+  --shadow:0 4px 20px rgba(0,0,0,.10);
+  --pov-color:#e8526a; --pov-bg:rgba(232,82,106,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans JP','Meiryo',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+header{height:56px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.07);z-index:1000;}
+.logo{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;letter-spacing:.06em;padding:5px 11px;border-radius:7px;flex-shrink:0;}
+.htitle{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;white-space:nowrap;}
+.sep{width:1px;height:22px;background:var(--border);flex-shrink:0;}
+.pov-wrap{display:flex;flex-direction:column;gap:2px;}
+.pov-lbl{font-size:8px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;font-weight:700;}
+.pov-sw{display:flex;background:var(--panel2);border:1.5px solid var(--border);border-radius:30px;padding:3px;}
+.pov-btn{padding:5px 13px;border:none;border-radius:24px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Noto Sans JP',sans-serif;transition:all .2s;color:var(--text3);background:transparent;white-space:nowrap;}
+.pov-btn.on-jp{background:var(--jp);color:#fff;box-shadow:0 2px 10px rgba(232,82,106,.4);}
+.pov-btn.on-id{background:var(--id);color:#fff;box-shadow:0 2px 10px rgba(58,155,232,.4);}
+.pov-btn.on-both{background:linear-gradient(90deg,var(--jp),var(--id));color:#fff;box-shadow:0 2px 10px rgba(58,171,168,.3);}
+.pov-strip{padding:5px 14px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px;border-bottom:2.5px solid var(--pov-color);background:var(--pov-bg);transition:all .3s;flex-shrink:0;}
+.pov-strip-label{color:var(--pov-color);}
+.pov-strip-desc{font-size:10px;color:var(--text3);font-weight:400;}
+.sbar{height:28px;background:var(--panel2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:14px;font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;flex-shrink:0;}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:4px;}
+.sdot.demo{background:var(--orange);box-shadow:0 0 5px var(--orange);}
+.sdot.live{background:var(--teal);box-shadow:0 0 5px var(--teal);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.main{display:flex;flex:1;overflow:hidden;position:relative;}
+#map{flex:1;}
 </style>
 </head>
 <body>
+
 <header>
-<div class="logo">SchooMy</div>
-<div class="sep"></div>
-<span class="htitle">学校環境比較マップ v3</span>
+  <div class="logo">SchooMy</div>
+  <div class="sep"></div>
+  <span class="htitle">学校環境比較マップ</span>
+  <div class="sep"></div>
+  <div class="pov-wrap">
+    <div class="pov-lbl">👁 評価する視点</div>
+    <div class="pov-sw">
+      <button class="pov-btn" id="pov-jp" onclick="setPov('JP')">🇯🇵 日本目線</button>
+      <button class="pov-btn" id="pov-both" onclick="setPov('BOTH')">🌏 両方</button>
+      <button class="pov-btn" id="pov-id" onclick="setPov('ID')">🇮🇩 インドネシア目線</button>
+    </div>
+  </div>
+  <span style="font-size:10px;color:var(--text3);margin-left:auto">● DEMO</span>
 </header>
-<div class="main">
-<div id="map"></div>
+
+<div class="pov-strip" id="pov-strip">
+  <span id="pov-icon" style="font-size:15px">🇯🇵</span>
+  <span class="pov-strip-label" id="pov-label">日本の快適基準で全校を評価中</span>
+  <span class="pov-strip-desc" id="pov-desc">— インドネシアの学校も日本の「快適」で採点されます</span>
 </div>
+
+<div class="sbar">
+  <span><span class="sdot demo" id="sdot"></span><span id="stext">デモモード稼働中</span></span>
+  <span id="stime" style="margin-left:auto;color:var(--text3)"></span>
+</div>
+
+<div class="main">
+  <div id="map"></div>
+</div>
+
 <script>
-var map = L.map('map',{center:[0,115],zoom:4}).setView([0,115],4);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
-var SCHOOLS=[
-{name:'静岡サレジオ高校',lat:34.9756,lng:138.3828,country:'JP'},
-{name:'山梨学院高校',lat:35.6622,lng:138.5686,country:'JP'},
-{name:'鶴岡工業高等専門学校',lat:38.7142,lng:139.8298,country:'JP'},
-{name:'SDH Cikarang',lat:-6.3466,lng:107.1568,country:'ID'},
-{name:'SDH Lippo Village',lat:-6.2256,lng:106.6193,country:'ID'},
-{name:'SDH Daan Mogot',lat:-6.1677,lng:106.7469,country:'ID'},
-{name:'SDH Makassar',lat:-5.163,lng:119.434,country:'ID'},
-{name:'SDH Ranotana',lat:1.4754,lng:124.8272,country:'ID'},
-{name:'SDH Medan',lat:3.5912,lng:98.6739,country:'ID'},
-{name:'SDH Bogor',lat:-6.589,lng:106.808,country:'ID'},
-{name:'SDH Jogja',lat:-7.7875,lng:110.369,country:'ID'},
-{name:'SDH Surabaya',lat:-7.3265,lng:112.734,country:'ID'},
-{name:'SDH Ambon',lat:-3.6954,lng:128.181,country:'ID'},
-{name:'SDH Kupang',lat:-10.177,lng:123.607,country:'ID'}
+var pov = 'JP';
+var POV_META = {
+  JP:   { color:'#e8526a', bg:'rgba(232,82,106,.08)', icon:'🇯🇵', label:'日本の快適基準で全校を評価中', desc:'— インドネシアの学校も日本の「快適」で採点されます' },
+  ID:   { color:'#3A9BE8', bg:'rgba(58,155,232,.08)', icon:'🇮🇩', label:'インドネシアの快適基準で全校を評価中', desc:'— 日本の学校もインドネシアの「快適」で採点されます' },
+  BOTH: { color:'#3AABA8', bg:'rgba(58,171,168,.08)', icon:'🌏', label:'日本・インドネシア両方の視点で比較中', desc:'— 左が🇯🇵スコア、右が🇮🇩スコアです' }
+};
+
+var SCHOOLS = [
+  { id:'SS', country:'JP', name:'静岡サレジオ高校', region:'静岡市, 静岡県', lat:34.9756, lng:138.3828 },
+  { id:'YM', country:'JP', name:'山梨学院高校', region:'甲府市, 山梨県', lat:35.6622, lng:138.5686 },
+  { id:'TG', country:'JP', name:'鶴岡工業高等専門学校', region:'鶴岡市, 山形県', lat:38.7142, lng:139.8298 },
+  { id:'CK', country:'ID', name:'SDH Cikarang', region:'Bekasi, Jawa Barat', lat:-6.3466, lng:107.1568 },
+  { id:'LV', country:'ID', name:'SDH Lippo Village', region:'Tangerang, Banten', lat:-6.2256, lng:106.6193 },
+  { id:'DM', country:'ID', name:'SDH Daan Mogot', region:'Jakarta Barat', lat:-6.1677, lng:106.7469 },
+  { id:'MK', country:'ID', name:'SDH Makassar', region:'Makassar, Sulawesi', lat:-5.163, lng:119.434 },
+  { id:'RN', country:'ID', name:'SDH Ranotana', region:'Manado, Sulawesi Utara', lat:1.4754, lng:124.8272 },
+  { id:'MD', country:'ID', name:'SDH Medan', region:'Medan, Sumatera Utara', lat:3.5912, lng:98.6739 },
+  { id:'BG', country:'ID', name:'SDH Bogor', region:'Bogor, Jawa Barat', lat:-6.589, lng:106.808 },
+  { id:'JG', country:'ID', name:'SDH Jogja', region:'Yogyakarta, DIY', lat:-7.7875, lng:110.369 },
+  { id:'SB', country:'ID', name:'SDH Surabaya', region:'Surabaya, Jawa Timur', lat:-7.3265, lng:112.734 },
+  { id:'AM', country:'ID', name:'SDH Ambon', region:'Ambon, Maluku', lat:-3.6954, lng:128.181 },
+  { id:'KP', country:'ID', name:'SDH Kupang', region:'Kupang, NTT', lat:-10.177, lng:123.607 }
 ];
+
+var SENSORS = {
+  temp:  { icon:'🌡', label:'温度', unit:'℃', min:10, max:45 },
+  humid: { icon:'💧', label:'湿度', unit:'%', min:10, max:99 },
+  light: { icon:'💡', label:'照度', unit:'lx', min:50, max:2000 },
+  noise: { icon:'🔊', label:'騒音', unit:'dB', min:25, max:95 }
+};
+var SKEYS = ['temp','humid','light','noise'];
+
+var comfort = {
+  JP: { temp:[20,26], humid:[40,60], light:[300,700], noise:[35,55] },
+  ID: { temp:[26,33], humid:[55,82], light:[400,1000], noise:[42,68] }
+};
+
+var sensorData = {};
+SCHOOLS.forEach(function(s) { sensorData[s.id] = { temp:null, humid:null, light:null, noise:null }; });
+
+function calcScore(schoolId, fromCtry) {
+  var d = sensorData[schoolId], c = comfort[fromCtry];
+  var scores = SKEYS.map(function(k) {
+    if (d[k] === null) return null;
+    var lo=c[k][0], hi=c[k][1], mid=(lo+hi)/2, half=(hi-lo)/2;
+    return Math.round(Math.max(0, 1-Math.abs(d[k]-mid)/(half*2))*100);
+  }).filter(function(v){ return v!==null; });
+  return scores.length ? Math.round(scores.reduce(function(a,b){return a+b;})/scores.length) : null;
+}
+
+function scoreColor(s) {
+  if (s===null) return '#b0c4d4';
+  if (s>=75) return '#3AABA8';
+  if (s>=55) return '#5dc573';
+  if (s>=35) return '#f0c040';
+  return '#e55a4e';
+}
+
+var map = L.map('map',{center:[0,115],zoom:4,zoomControl:true,attributionControl:false}).setView([0,115],4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
+L.control.attribution({prefix:'© OpenStreetMap | SchooMy'}).addTo(map);
+
+var markers = {};
+
+function makeIcon(school) {
+  var SZ=36, border=school.country==='JP'?'#e8526a':'#3A9BE8';
+  var sc = calcScore(school.id, pov==='ID'?'ID':'JP');
+  var col = scoreColor(sc);
+  var label = sc!==null ? sc : '—';
+  var html = '<div style="width:'+SZ+'px;height:'+SZ+'px;border-radius:50%;background:'+col+';border:3px solid '+border+';box-shadow:0 2px 10px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)"><span style="font-size:11px;font-weight:700;color:#fff;font-family:\'DM Mono\',monospace;text-shadow:0 1px 2px rgba(0,0,0,.3)">'+label+'</span></div>';
+  return L.divIcon({html:html,className:'',iconSize:[SZ,SZ],iconAnchor:[SZ/2,SZ/2]});
+}
+
+function buildPopup(school) {
+  var d=sensorData[school.id], flag=school.country==='JP'?'🇯🇵':'🇮🇩';
+  var scJP=calcScore(school.id,'JP'), scID=calcScore(school.id,'ID');
+  var panels = SKEYS.map(function(key){
+    var meta=SENSORS[key], val=d[key];
+    return '<div style="background:var(--panel2);border-radius:7px;padding:7px 9px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><span style="font-size:12px">'+meta.icon+'</span><span style="font-size:9px;color:var(--text3);font-weight:700">'+meta.label+'</span></div><div style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:500">'+(val!==null?(key==='light'?Math.round(val):val.toFixed(1)):'—')+'<span style="font-size:9px;color:var(--text3)">'+meta.unit+'</span></div></div>';
+  }).join('');
+  return '<div style="font-family:\'Noto Sans JP\',sans-serif;width:260px"><div style="padding:12px 14px 10px;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">'+flag+'</span><div><div style="font-size:13px;font-weight:700">'+school.name+'</div><div style="font-size:10px;color:var(--text3)">'+school.region+'</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px"><div style="border-radius:8px;padding:8px 10px;border:1.5px solid #e8526a"><div style="font-size:8px;font-weight:700;color:#e8526a">🇯🇵 日本目線</div><div style="font-family:\'Syne\',sans-serif;font-size:30px;font-weight:800;color:'+scoreColor(scJP)+'">'+(scJP!==null?scJP:'—')+'</div></div><div style="border-radius:8px;padding:8px 10px;border:1.5px solid #3A9BE8"><div style="font-size:8px;font-weight:700;color:#3A9BE8">🇮🇩 インドネシア目線</div><div style="font-family:\'Syne\',sans-serif;font-size:30px;font-weight:800;color:'+scoreColor(scID)+'">'+(scID!==null?scID:'—')+'</div></div></div></div><div style="padding:10px 14px 12px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+panels+'</div></div></div>';
+}
+
 SCHOOLS.forEach(function(s){
-var col=s.country==='JP'?'#e8526a':'#3A9BE8';
-var flag=s.country==='JP'?'🇯🇵':'🇮🇩';
-L.circleMarker([s.lat,s.lng],{radius:8,color:col,fillColor:col,fillOpacity:0.7}).addTo(map).bindPopup('<b>'+flag+' '+s.name+'</b>');
+  var m = L.marker([s.lat,s.lng],{icon:makeIcon(s)}).addTo(map);
+  m.bindPopup(buildPopup(s),{maxWidth:300});
+  markers[s.id] = m;
 });
+
+var DEMO = {
+  JP: { temp:[17,24], humid:[33,55], light:[280,680], noise:[36,53] },
+  ID: { temp:[27,35], humid:[60,88], light:[480,1100], noise:[46,70] }
+};
+
+function rand(a,b){ return a+Math.random()*(b-a); }
+function nudge(v,a,b,s){ return parseFloat(Math.max(a,Math.min(b,v+(Math.random()-.5)*s)).toFixed(1)); }
+
+function refreshAll(){
+  SCHOOLS.forEach(function(s){
+    markers[s.id].setIcon(makeIcon(s));
+    if(markers[s.id].isPopupOpen()) markers[s.id].setPopupContent(buildPopup(s));
+  });
+}
+
+function startDemo(){
+  SCHOOLS.forEach(function(s){
+    var r=DEMO[s.country];
+    sensorData[s.id]={temp:parseFloat(rand(r.temp[0],r.temp[1]).toFixed(1)),humid:parseFloat(rand(r.humid[0],r.humid[1]).toFixed(1)),light:Math.round(rand(r.light[0],r.light[1])),noise:parseFloat(rand(r.noise[0],r.noise[1]).toFixed(1))};
+  });
+  refreshAll();
+  setInterval(function(){
+    SCHOOLS.forEach(function(s){
+      var r=DEMO[s.country],d=sensorData[s.id];
+      sensorData[s.id]={temp:nudge(d.temp,r.temp[0],r.temp[1],0.4),humid:nudge(d.humid,r.humid[0],r.humid[1],1.2),light:Math.round(nudge(d.light,r.light[0],r.light[1],30)),noise:nudge(d.noise,r.noise[0],r.noise[1],1.0)};
+    });
+    refreshAll();
+    document.getElementById('stime').textContent=new Date().toLocaleTimeString('ja-JP');
+  },2000);
+}
+
+function setPov(p){
+  pov=p;
+  var m=POV_META[p];
+  document.documentElement.style.setProperty('--pov-color',m.color);
+  document.documentElement.style.setProperty('--pov-bg',m.bg);
+  document.getElementById('pov-jp').className='pov-btn'+(p==='JP'?' on-jp':'');
+  document.getElementById('pov-both').className='pov-btn'+(p==='BOTH'?' on-both':'');
+  document.getElementById('pov-id').className='pov-btn'+(p==='ID'?' on-id':'');
+  document.getElementById('pov-icon').textContent=m.icon;
+  document.getElementById('pov-label').textContent=m.label;
+  document.getElementById('pov-desc').textContent=m.desc;
+  var strip=document.getElementById('pov-strip');
+  strip.style.borderBottomColor=m.color;
+  strip.style.background=m.bg;
+  refreshAll();
+}
+
+setPov('JP');
+startDemo();
 </script>
 </body>
 </html>
