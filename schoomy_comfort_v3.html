@@ -1,221 +1,691 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SchooMy 学校環境比較マップ — 視点モード</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<title>SchooMy 学校環境比較マップ v3</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
 :root {
-  --bg:#f0f4f8; --panel:#fff; --panel2:#f5f8fb; --border:#dde4ec;
-  --text:#1a2433; --text2:#4a6080; --text3:#8faabb;
-  --teal:#3AABA8; --teal2:#2a8a87; --teal-bg:rgba(58,171,168,.09);
-  --orange:#E88A0A; --jp:#e8526a; --jp-bg:rgba(232,82,106,.1);
-  --id:#3A9BE8;   --id-bg:rgba(58,155,232,.1);
-  --shadow:0 4px 20px rgba(0,0,0,.10);
-  --pov-color:#e8526a; --pov-bg:rgba(232,82,106,.08);
+  --jp:#e8526a; --jp-bg:#fef0f2; --jp-light:#f9d0d7;
+  --id:#3A9BE8; --id-bg:#edf5fd; --id-light:#b8d9f7;
+  --both:#3AABA8; --both-bg:#edf9f8; --both-light:#b0e5e3;
+  --bg:#0f1117; --surface:#181b24; --card:#1e2230; --card-hover:#262a3a;
+  --border:#2a2e3e; --text:#e4e6ed; --text-dim:#8b8fa4; --text-muted:#565a6e;
+  --accent:var(--both); --accent-bg:var(--both-bg);
+  --sidebar-w:315px; --header-h:54px; --strip-h:32px; --status-h:28px;
+  --radius:10px; --radius-sm:6px;
+  --score-great:#22c55e; --score-good:#84cc16; --score-ok:#eab308; --score-poor:#f97316; --score-bad:#ef4444;
+  --font-sans:'Noto Sans JP','Inter',sans-serif;
+  --font-mono:'DM Mono',monospace;
+  --font-display:'Syne','Noto Sans JP',sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Noto Sans JP','Meiryo',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
-header{height:56px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.07);z-index:1000;}
-.logo{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;letter-spacing:.06em;padding:5px 11px;border-radius:7px;flex-shrink:0;}
-.htitle{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;white-space:nowrap;}
-.sep{width:1px;height:22px;background:var(--border);flex-shrink:0;}
-.pov-wrap{display:flex;flex-direction:column;gap:2px;}
-.pov-lbl{font-size:8px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;font-weight:700;}
-.pov-sw{display:flex;background:var(--panel2);border:1.5px solid var(--border);border-radius:30px;padding:3px;}
-.pov-btn{padding:5px 13px;border:none;border-radius:24px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Noto Sans JP',sans-serif;transition:all .2s;color:var(--text3);background:transparent;white-space:nowrap;}
-.pov-btn.on-jp{background:var(--jp);color:#fff;box-shadow:0 2px 10px rgba(232,82,106,.4);}
-.pov-btn.on-id{background:var(--id);color:#fff;box-shadow:0 2px 10px rgba(58,155,232,.4);}
-.pov-btn.on-both{background:linear-gradient(90deg,var(--jp),var(--id));color:#fff;box-shadow:0 2px 10px rgba(58,171,168,.3);}
-.pov-strip{padding:5px 14px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px;border-bottom:2.5px solid var(--pov-color);background:var(--pov-bg);transition:all .3s;flex-shrink:0;}
-.pov-strip-label{color:var(--pov-color);}
-.pov-strip-desc{font-size:10px;color:var(--text3);font-weight:400;}
-.sbar{height:28px;background:var(--panel2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:14px;font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;flex-shrink:0;}
-.sdot{width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:4px;}
-.sdot.demo{background:var(--orange);box-shadow:0 0 5px var(--orange);}
-.sdot.live{background:var(--teal);box-shadow:0 0 5px var(--teal);animation:blink 2s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.main{display:flex;flex:1;overflow:hidden;position:relative;}
-#map{flex:1;}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);overflow:hidden;height:100vh;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* HEADER */
+#header{height:var(--header-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;z-index:1000;position:relative;}
+.logo{font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--accent);display:flex;align-items:center;gap:8px;}
+.logo svg{width:28px;height:28px;}
+.logo span{opacity:.5;font-weight:400;font-size:13px;margin-left:2px;color:var(--text-dim);}
+.pov-group{display:flex;gap:4px;margin-left:auto;}
+.pov-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:12px;font-family:var(--font-sans);font-weight:500;cursor:pointer;transition:all .2s;}
+.pov-btn:hover{background:var(--card);color:var(--text);}
+.pov-btn.active[data-pov="jp"]{background:var(--jp);color:#fff;border-color:var(--jp);}
+.pov-btn.active[data-pov="both"]{background:var(--both);color:#fff;border-color:var(--both);}
+.pov-btn.active[data-pov="id"]{background:var(--id);color:#fff;border-color:var(--id);}
+
+/* POV STRIP */
+#pov-strip{height:var(--strip-h);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;letter-spacing:.5px;transition:background .3s,color .3s;z-index:999;position:relative;}
+#pov-strip.jp{background:var(--jp);color:#fff;}
+#pov-strip.both{background:var(--both);color:#fff;}
+#pov-strip.id{background:var(--id);color:#fff;}
+
+/* STATUS BAR */
+#status-bar{height:var(--status-h);background:var(--bg);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 16px;font-size:11px;font-family:var(--font-mono);color:var(--text-muted);gap:16px;position:fixed;bottom:0;left:0;right:0;z-index:1001;}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;}
+.status-dot.on{background:#22c55e;box-shadow:0 0 6px #22c55e88;}
+.status-dot.off{background:#ef4444;}
+.status-dot.demo{background:#eab308;box-shadow:0 0 6px #eab30888;}
+
+/* LAYOUT */
+#main{display:flex;height:calc(100vh - var(--header-h) - var(--strip-h) - var(--status-h) - 64px);}
+#sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+#map-container{flex:1;position:relative;}
+#map{width:100%;height:100%;}
+
+/* SIDEBAR TABS */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg);}
+.tab-btn{flex:1;padding:10px 0;text-align:center;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;transition:all .2s;}
+.tab-btn:hover{color:var(--text-dim);}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-content{display:none;overflow-y:auto;flex:1;padding:12px;}
+.tab-content.active{display:block;}
+
+/* SCHOOL CARDS */
+.school-card{background:var(--card);border-radius:var(--radius);padding:12px;margin-bottom:8px;cursor:pointer;border:1px solid transparent;transition:all .2s;}
+.school-card:hover{background:var(--card-hover);border-color:var(--border);}
+.school-card.jp-card{border-left:3px solid var(--jp);}
+.school-card.id-card{border-left:3px solid var(--id);}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.card-name{font-size:13px;font-weight:600;line-height:1.3;}
+.card-country{font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;letter-spacing:.3px;}
+.card-country.jp{background:var(--jp-bg);color:var(--jp);}
+.card-country.id{background:var(--id-bg);color:var(--id);}
+.card-ring-row{display:flex;align-items:center;gap:10px;}
+.ring-wrap{position:relative;width:44px;height:44px;flex-shrink:0;}
+.ring-wrap svg{transform:rotate(-90deg);}
+.ring-score{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:13px;font-weight:600;}
+.card-metrics{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11px;color:var(--text-dim);}
+.card-metrics span{display:flex;align-items:center;gap:3px;}
+
+/* SETTINGS TAB */
+.settings-section{margin-bottom:18px;}
+.settings-title{font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;}
+.slider-group{margin-bottom:10px;}
+.slider-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;color:var(--text-dim);}
+.slider-label .val{font-family:var(--font-mono);color:var(--text);}
+.dual-range{position:relative;height:24px;}
+.dual-range input[type=range]{position:absolute;width:100%;height:24px;-webkit-appearance:none;appearance:none;background:transparent;pointer-events:none;}
+.dual-range input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;pointer-events:all;border:2px solid var(--surface);}
+.dual-range input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--border);}
+
+/* INSIGHT TABLE */
+.insight-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
+.insight-table th{padding:6px 4px;text-align:left;color:var(--text-muted);font-weight:500;border-bottom:1px solid var(--border);}
+.insight-table td{padding:5px 4px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px;}
+.insight-table .diff{font-weight:600;}
+.insight-table .diff.hot{color:var(--score-bad);}
+.insight-table .diff.cool{color:var(--id);}
+
+/* CONNECT TAB */
+.connect-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:10px;}
+.connect-card h3{font-size:13px;margin-bottom:8px;}
+.connect-card p{font-size:11px;color:var(--text-dim);margin-bottom:12px;line-height:1.5;}
+.btn{padding:8px 16px;border-radius:var(--radius-sm);border:none;font-family:var(--font-sans);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{filter:brightness(1.15);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-dim);}
+.btn-outline:hover{background:var(--card);color:var(--text);}
+.btn-demo{background:#eab308;color:#000;}
+.btn-demo:hover{background:#facc15;}
+.btn-demo.active{background:#22c55e;color:#fff;}
+
+/* COMPARE PANEL */
+#compare-panel{height:64px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:0;position:relative;z-index:999;}
+.cmp-section{flex:1;display:flex;align-items:center;gap:12px;justify-content:center;}
+.cmp-flag{font-size:18px;}
+.cmp-group{display:flex;gap:16px;}
+.cmp-item{text-align:center;}
+.cmp-item .label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;}
+.cmp-item .value{font-family:var(--font-mono);font-size:15px;font-weight:600;margin-top:1px;}
+.cmp-vs{font-family:var(--font-display);font-size:12px;font-weight:600;color:var(--text-muted);padding:0 8px;}
+
+/* MAP LEGEND */
+#map-legend{position:absolute;bottom:12px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;z-index:800;font-size:11px;}
+#map-legend h4{font-size:11px;margin-bottom:6px;color:var(--text-dim);}
+.legend-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;}
+.legend-dot{width:10px;height:10px;border-radius:50%;}
+
+/* LEAFLET OVERRIDES */
+.leaflet-popup-content-wrapper{background:var(--surface)!important;color:var(--text)!important;border-radius:var(--radius)!important;border:1px solid var(--border)!important;box-shadow:0 8px 32px rgba(0,0,0,.4)!important;}
+.leaflet-popup-tip{background:var(--surface)!important;border:1px solid var(--border)!important;}
+.leaflet-popup-content{margin:12px 14px!important;font-family:var(--font-sans)!important;min-width:280px;}
+.popup-title{font-size:14px;font-weight:700;margin-bottom:2px;}
+.popup-country{font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:10px;}
+.popup-country.jp{background:var(--jp-bg);color:var(--jp);}
+.popup-country.id{background:var(--id-bg);color:var(--id);}
+.popup-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.popup-metric{background:var(--card);border-radius:var(--radius-sm);padding:8px;}
+.popup-metric .pm-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;}
+.popup-metric .pm-value{font-family:var(--font-mono);font-size:18px;font-weight:600;margin:2px 0;}
+.popup-metric .pm-unit{font-size:10px;color:var(--text-dim);}
+.popup-dual-bar{height:6px;background:var(--border);border-radius:3px;margin-top:4px;position:relative;overflow:visible;}
+.popup-dual-bar .bar-fill{position:absolute;height:100%;border-radius:3px;top:0;transition:width .5s;}
+.popup-dual-bar .bar-fill.jp-fill{background:var(--jp);}
+.popup-dual-bar .bar-fill.id-fill{background:var(--id);top:0;}
+.popup-scores{display:flex;gap:8px;margin-bottom:10px;}
+.popup-score-box{flex:1;text-align:center;padding:8px;border-radius:var(--radius-sm);background:var(--card);}
+.popup-score-box .ps-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;}
+.popup-score-box .ps-val{font-family:var(--font-mono);font-size:22px;font-weight:700;}
+.popup-radar{display:flex;justify-content:center;margin-top:8px;}
+.leaflet-control-zoom{border:1px solid var(--border)!important;}
+.leaflet-control-zoom a{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important;}
+.leaflet-control-zoom a:hover{background:var(--card)!important;}
+
+/* Custom markers */
+.custom-marker{border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:var(--font-mono);transition:transform .2s;}
+.custom-marker:hover{transform:scale(1.15);}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">SchooMy</div>
-  <div class="sep"></div>
-  <span class="htitle">学校環境比較マップ</span>
-  <div class="sep"></div>
-  <div class="pov-wrap">
-    <div class="pov-lbl">👁 評価する視点</div>
-    <div class="pov-sw">
-      <button class="pov-btn" id="pov-jp" onclick="setPov('JP')">🇯🇵 日本目線</button>
-      <button class="pov-btn" id="pov-both" onclick="setPov('BOTH')">🌏 両方</button>
-      <button class="pov-btn" id="pov-id" onclick="setPov('ID')">🇮🇩 インドネシア目線</button>
+<!-- HEADER -->
+<div id="header">
+  <div class="logo">
+    <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M8 22V12a2 2 0 012-2h12a2 2 0 012 2v10" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M6 22h20" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="15" r="3" stroke="#fff" stroke-width="2"/></svg>
+    SchooMy <span>Comfort Map v3</span>
+  </div>
+  <div class="pov-group">
+    <button class="pov-btn" data-pov="jp" onclick="setPOV('jp')">🇯🇵 日本目線</button>
+    <button class="pov-btn active" data-pov="both" onclick="setPOV('both')">🌏 両方</button>
+    <button class="pov-btn" data-pov="id" onclick="setPOV('id')">🇮🇩 インドネシア目線</button>
+  </div>
+</div>
+
+<!-- POV STRIP -->
+<div id="pov-strip" class="both">🌏 グローバル比較モード — 日本・インドネシア両方の快適基準で評価中</div>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('list')">📋 学校一覧</button>
+      <button class="tab-btn" onclick="switchTab('settings')">⚙️ 快適設定</button>
+      <button class="tab-btn" onclick="switchTab('connect')">🔌 接続</button>
+    </div>
+
+    <!-- LIST TAB -->
+    <div id="tab-list" class="tab-content active"></div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" class="tab-content">
+      <div class="settings-section">
+        <div class="settings-title">🇯🇵 日本 快適範囲</div>
+        <div id="jp-sliders"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">🇮🇩 インドネシア 快適範囲</div>
+        <div id="id-sliders"></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">差分インサイト</div>
+        <table class="insight-table">
+          <thead><tr><th>指標</th><th>🇯🇵 JP</th><th>🇮🇩 ID</th><th>差分</th></tr></thead>
+          <tbody id="insight-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CONNECT TAB -->
+    <div id="tab-connect" class="tab-content">
+      <div class="connect-card">
+        <h3>🔌 Web Serial 接続</h3>
+        <p>Arduino / オレンジボードをUSB接続し、シリアルポートからリアルタイムセンサーデータを受信します。</p>
+        <button class="btn btn-primary" id="btn-serial" onclick="connectSerial()">ポートを選択</button>
+      </div>
+      <div class="connect-card">
+        <h3>🎮 デモモード</h3>
+        <p>実機がなくてもセンサーデータをシミュレーションできます。2秒ごとにランダム更新されます。</p>
+        <button class="btn btn-demo" id="btn-demo" onclick="toggleDemo()">▶ デモ開始</button>
+      </div>
+      <div class="connect-card">
+        <h3>📡 データ形式</h3>
+        <p>シリアルデータは以下のCSV形式で送信してください：<br>
+        <code style="font-family:var(--font-mono);font-size:11px;background:var(--bg);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:4px;">school_id,temp,humid,light,noise</code></p>
+      </div>
     </div>
   </div>
-  <span style="font-size:10px;color:var(--text3);margin-left:auto">● DEMO</span>
-</header>
 
-<div class="pov-strip" id="pov-strip">
-  <span id="pov-icon" style="font-size:15px">🇯🇵</span>
-  <span class="pov-strip-label" id="pov-label">日本の快適基準で全校を評価中</span>
-  <span class="pov-strip-desc" id="pov-desc">— インドネシアの学校も日本の「快適」で採点されます</span>
+  <!-- MAP -->
+  <div id="map-container">
+    <div id="map"></div>
+    <div id="map-legend">
+      <h4>快適スコア</h4>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--score-great)"></div> 80-100 快適</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--score-good)"></div> 60-79 良好</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--score-ok)"></div> 40-59 普通</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--score-poor)"></div> 20-39 注意</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--score-bad)"></div> 0-19 不快</div>
+    </div>
+  </div>
 </div>
 
-<div class="sbar">
-  <span><span class="sdot demo" id="sdot"></span><span id="stext">デモモード稼働中</span></span>
-  <span id="stime" style="margin-left:auto;color:var(--text3)"></span>
+<!-- COMPARE PANEL -->
+<div id="compare-panel">
+  <div class="cmp-section">
+    <span class="cmp-flag">🇯🇵</span>
+    <div class="cmp-group">
+      <div class="cmp-item"><div class="label">温度</div><div class="value" id="cmp-jp-temp">--</div></div>
+      <div class="cmp-item"><div class="label">湿度</div><div class="value" id="cmp-jp-humid">--</div></div>
+      <div class="cmp-item"><div class="label">照度</div><div class="value" id="cmp-jp-light">--</div></div>
+      <div class="cmp-item"><div class="label">騒音</div><div class="value" id="cmp-jp-noise">--</div></div>
+      <div class="cmp-item"><div class="label">快適度</div><div class="value" id="cmp-jp-score">--</div></div>
+    </div>
+  </div>
+  <span class="cmp-vs">VS</span>
+  <div class="cmp-section">
+    <div class="cmp-group">
+      <div class="cmp-item"><div class="label">温度</div><div class="value" id="cmp-id-temp">--</div></div>
+      <div class="cmp-item"><div class="label">湿度</div><div class="value" id="cmp-id-humid">--</div></div>
+      <div class="cmp-item"><div class="label">照度</div><div class="value" id="cmp-id-light">--</div></div>
+      <div class="cmp-item"><div class="label">騒音</div><div class="value" id="cmp-id-noise">--</div></div>
+      <div class="cmp-item"><div class="label">快適度</div><div class="value" id="cmp-id-score">--</div></div>
+    </div>
+    <span class="cmp-flag">🇮🇩</span>
+  </div>
 </div>
 
-<div class="main">
-  <div id="map"></div>
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <span><span class="status-dot off" id="status-dot"></span><span id="status-text">未接続</span></span>
+  <span id="status-schools">14校登録済</span>
+  <span id="status-pov">POV: 両方</span>
+  <span id="status-time" style="margin-left:auto;"></span>
 </div>
 
 <script>
-var pov = 'JP';
-var POV_META = {
-  JP:   { color:'#e8526a', bg:'rgba(232,82,106,.08)', icon:'🇯🇵', label:'日本の快適基準で全校を評価中', desc:'— インドネシアの学校も日本の「快適」で採点されます' },
-  ID:   { color:'#3A9BE8', bg:'rgba(58,155,232,.08)', icon:'🇮🇩', label:'インドネシアの快適基準で全校を評価中', desc:'— 日本の学校もインドネシアの「快適」で採点されます' },
-  BOTH: { color:'#3AABA8', bg:'rgba(58,171,168,.08)', icon:'🌏', label:'日本・インドネシア両方の視点で比較中', desc:'— 左が🇯🇵スコア、右が🇮🇩スコアです' }
-};
-
-var SCHOOLS = [
-  { id:'SS', country:'JP', name:'静岡サレジオ高校', region:'静岡市, 静岡県', lat:34.9756, lng:138.3828 },
-  { id:'YM', country:'JP', name:'山梨学院高校', region:'甲府市, 山梨県', lat:35.6622, lng:138.5686 },
-  { id:'TG', country:'JP', name:'鶴岡工業高等専門学校', region:'鶴岡市, 山形県', lat:38.7142, lng:139.8298 },
-  { id:'CK', country:'ID', name:'SDH Cikarang', region:'Bekasi, Jawa Barat', lat:-6.3466, lng:107.1568 },
-  { id:'LV', country:'ID', name:'SDH Lippo Village', region:'Tangerang, Banten', lat:-6.2256, lng:106.6193 },
-  { id:'DM', country:'ID', name:'SDH Daan Mogot', region:'Jakarta Barat', lat:-6.1677, lng:106.7469 },
-  { id:'MK', country:'ID', name:'SDH Makassar', region:'Makassar, Sulawesi', lat:-5.163, lng:119.434 },
-  { id:'RN', country:'ID', name:'SDH Ranotana', region:'Manado, Sulawesi Utara', lat:1.4754, lng:124.8272 },
-  { id:'MD', country:'ID', name:'SDH Medan', region:'Medan, Sumatera Utara', lat:3.5912, lng:98.6739 },
-  { id:'BG', country:'ID', name:'SDH Bogor', region:'Bogor, Jawa Barat', lat:-6.589, lng:106.808 },
-  { id:'JG', country:'ID', name:'SDH Jogja', region:'Yogyakarta, DIY', lat:-7.7875, lng:110.369 },
-  { id:'SB', country:'ID', name:'SDH Surabaya', region:'Surabaya, Jawa Timur', lat:-7.3265, lng:112.734 },
-  { id:'AM', country:'ID', name:'SDH Ambon', region:'Ambon, Maluku', lat:-3.6954, lng:128.181 },
-  { id:'KP', country:'ID', name:'SDH Kupang', region:'Kupang, NTT', lat:-10.177, lng:123.607 }
+// ===== DATA =====
+const schools = [
+  {id:'shizuoka',name:'静岡サレジオ高校',country:'jp',lat:34.9756,lng:138.3828,data:{temp:21.3,humid:48,light:520,noise:42}},
+  {id:'yamanashi',name:'山梨学院高校',country:'jp',lat:35.6622,lng:138.5686,data:{temp:19.8,humid:44,light:480,noise:39}},
+  {id:'tsuruoka',name:'鶴岡工業高等専門学校',country:'jp',lat:38.7142,lng:139.8298,data:{temp:18.2,humid:41,light:390,noise:44}},
+  {id:'cikarang',name:'SDH Cikarang',country:'id',lat:-6.3466,lng:107.1568,data:{temp:31.2,humid:74,light:820,noise:58}},
+  {id:'lippo',name:'SDH Lippo Village',country:'id',lat:-6.2256,lng:106.6193,data:{temp:30.5,humid:71,light:780,noise:55}},
+  {id:'daanmogot',name:'SDH Daan Mogot',country:'id',lat:-6.1677,lng:106.7469,data:{temp:31.8,humid:76,light:850,noise:60}},
+  {id:'makassar',name:'SDH Makassar',country:'id',lat:-5.163,lng:119.434,data:{temp:32.4,humid:79,light:920,noise:62}},
+  {id:'ranotana',name:'SDH Ranotana',country:'id',lat:1.4754,lng:124.8272,data:{temp:29.8,humid:68,light:750,noise:52}},
+  {id:'medan',name:'SDH Medan',country:'id',lat:3.5912,lng:98.6739,data:{temp:30.9,humid:73,light:800,noise:57}},
+  {id:'bogor',name:'SDH Bogor',country:'id',lat:-6.589,lng:106.808,data:{temp:28.5,humid:82,light:680,noise:50}},
+  {id:'jogja',name:'SDH Jogja',country:'id',lat:-7.7875,lng:110.369,data:{temp:30.2,humid:70,light:860,noise:54}},
+  {id:'surabaya',name:'SDH Surabaya',country:'id',lat:-7.3265,lng:112.734,data:{temp:32.1,humid:75,light:900,noise:61}},
+  {id:'ambon',name:'SDH Ambon',country:'id',lat:-3.6954,lng:128.181,data:{temp:29.2,humid:80,light:710,noise:49}},
+  {id:'kupang',name:'SDH Kupang',country:'id',lat:-10.177,lng:123.607,data:{temp:33.5,humid:65,light:1050,noise:56}}
 ];
 
-var SENSORS = {
-  temp:  { icon:'🌡', label:'温度', unit:'℃', min:10, max:45 },
-  humid: { icon:'💧', label:'湿度', unit:'%', min:10, max:99 },
-  light: { icon:'💡', label:'照度', unit:'lx', min:50, max:2000 },
-  noise: { icon:'🔊', label:'騒音', unit:'dB', min:25, max:95 }
-};
-var SKEYS = ['temp','humid','light','noise'];
-
-var comfort = {
-  JP: { temp:[20,26], humid:[40,60], light:[300,700], noise:[35,55] },
-  ID: { temp:[26,33], humid:[55,82], light:[400,1000], noise:[42,68] }
+let comfortRanges = {
+  jp:{temp:[20,26],humid:[40,60],light:[300,700],noise:[35,55]},
+  id:{temp:[26,33],humid:[55,82],light:[400,1000],noise:[42,68]}
 };
 
-var sensorData = {};
-SCHOOLS.forEach(function(s) { sensorData[s.id] = { temp:null, humid:null, light:null, noise:null }; });
-
-function calcScore(schoolId, fromCtry) {
-  var d = sensorData[schoolId], c = comfort[fromCtry];
-  var scores = SKEYS.map(function(k) {
-    if (d[k] === null) return null;
-    var lo=c[k][0], hi=c[k][1], mid=(lo+hi)/2, half=(hi-lo)/2;
-    return Math.round(Math.max(0, 1-Math.abs(d[k]-mid)/(half*2))*100);
-  }).filter(function(v){ return v!==null; });
-  return scores.length ? Math.round(scores.reduce(function(a,b){return a+b;})/scores.length) : null;
-}
-
-function scoreColor(s) {
-  if (s===null) return '#b0c4d4';
-  if (s>=75) return '#3AABA8';
-  if (s>=55) return '#5dc573';
-  if (s>=35) return '#f0c040';
-  return '#e55a4e';
-}
-
-var map = L.map('map',{center:[0,115],zoom:4,zoomControl:true,attributionControl:false}).setView([0,115],4);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
-L.control.attribution({prefix:'© OpenStreetMap | SchooMy'}).addTo(map);
-
-var markers = {};
-
-function makeIcon(school) {
-  var SZ=36, border=school.country==='JP'?'#e8526a':'#3A9BE8';
-  var sc = calcScore(school.id, pov==='ID'?'ID':'JP');
-  var col = scoreColor(sc);
-  var label = sc!==null ? sc : '—';
-  var html = '<div style="width:'+SZ+'px;height:'+SZ+'px;border-radius:50%;background:'+col+';border:3px solid '+border+';box-shadow:0 2px 10px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)"><span style="font-size:11px;font-weight:700;color:#fff;font-family:\'DM Mono\',monospace;text-shadow:0 1px 2px rgba(0,0,0,.3)">'+label+'</span></div>';
-  return L.divIcon({html:html,className:'',iconSize:[SZ,SZ],iconAnchor:[SZ/2,SZ/2]});
-}
-
-function buildPopup(school) {
-  var d=sensorData[school.id], flag=school.country==='JP'?'🇯🇵':'🇮🇩';
-  var scJP=calcScore(school.id,'JP'), scID=calcScore(school.id,'ID');
-  var panels = SKEYS.map(function(key){
-    var meta=SENSORS[key], val=d[key];
-    return '<div style="background:var(--panel2);border-radius:7px;padding:7px 9px;"><div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><span style="font-size:12px">'+meta.icon+'</span><span style="font-size:9px;color:var(--text3);font-weight:700">'+meta.label+'</span></div><div style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:500">'+(val!==null?(key==='light'?Math.round(val):val.toFixed(1)):'—')+'<span style="font-size:9px;color:var(--text3)">'+meta.unit+'</span></div></div>';
-  }).join('');
-  return '<div style="font-family:\'Noto Sans JP\',sans-serif;width:260px"><div style="padding:12px 14px 10px;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">'+flag+'</span><div><div style="font-size:13px;font-weight:700">'+school.name+'</div><div style="font-size:10px;color:var(--text3)">'+school.region+'</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px"><div style="border-radius:8px;padding:8px 10px;border:1.5px solid #e8526a"><div style="font-size:8px;font-weight:700;color:#e8526a">🇯🇵 日本目線</div><div style="font-family:\'Syne\',sans-serif;font-size:30px;font-weight:800;color:'+scoreColor(scJP)+'">'+(scJP!==null?scJP:'—')+'</div></div><div style="border-radius:8px;padding:8px 10px;border:1.5px solid #3A9BE8"><div style="font-size:8px;font-weight:700;color:#3A9BE8">🇮🇩 インドネシア目線</div><div style="font-family:\'Syne\',sans-serif;font-size:30px;font-weight:800;color:'+scoreColor(scID)+'">'+(scID!==null?scID:'—')+'</div></div></div></div><div style="padding:10px 14px 12px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+panels+'</div></div></div>';
-}
-
-SCHOOLS.forEach(function(s){
-  var m = L.marker([s.lat,s.lng],{icon:makeIcon(s)}).addTo(map);
-  m.bindPopup(buildPopup(s),{maxWidth:300});
-  markers[s.id] = m;
-});
-
-var DEMO = {
-  JP: { temp:[17,24], humid:[33,55], light:[280,680], noise:[36,53] },
-  ID: { temp:[27,35], humid:[60,88], light:[480,1100], noise:[46,70] }
+const demoRanges = {
+  jp:{temp:[17,24],humid:[33,55],light:[280,680],noise:[36,53]},
+  id:{temp:[27,35],humid:[60,88],light:[480,1100],noise:[46,70]}
 };
 
-function rand(a,b){ return a+Math.random()*(b-a); }
-function nudge(v,a,b,s){ return parseFloat(Math.max(a,Math.min(b,v+(Math.random()-.5)*s)).toFixed(1)); }
+const metrics = [
+  {key:'temp',label:'温度',unit:'°C',icon:'🌡️',absMin:10,absMax:45},
+  {key:'humid',label:'湿度',unit:'%',icon:'💧',absMin:20,absMax:100},
+  {key:'light',label:'照度',unit:'lx',icon:'☀️',absMin:0,absMax:1500},
+  {key:'noise',label:'騒音',unit:'dB',icon:'🔊',absMin:20,absMax:90}
+];
 
-function refreshAll(){
-  SCHOOLS.forEach(function(s){
-    markers[s.id].setIcon(makeIcon(s));
-    if(markers[s.id].isPopupOpen()) markers[s.id].setPopupContent(buildPopup(s));
+let currentPOV = 'both';
+let demoInterval = null;
+let serialPort = null;
+let markers = {};
+
+// ===== MAP =====
+const map = L.map('map',{zoomControl:true,attributionControl:false}).setView([5,115],4);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
+
+function scoreColor(s){
+  if(s>=80) return getComputedStyle(document.documentElement).getPropertyValue('--score-great').trim();
+  if(s>=60) return getComputedStyle(document.documentElement).getPropertyValue('--score-good').trim();
+  if(s>=40) return getComputedStyle(document.documentElement).getPropertyValue('--score-ok').trim();
+  if(s>=20) return getComputedStyle(document.documentElement).getPropertyValue('--score-poor').trim();
+  return getComputedStyle(document.documentElement).getPropertyValue('--score-bad').trim();
+}
+
+function calcScore(data, ranges){
+  let total=0;
+  metrics.forEach(m=>{
+    const v=data[m.key], lo=ranges[m.key][0], hi=ranges[m.key][1];
+    if(v>=lo && v<=hi) total+=25;
+    else{
+      const dist = v<lo ? lo-v : v-hi;
+      const range = hi-lo;
+      const penalty = Math.min(dist/range,1);
+      total += 25*(1-penalty);
+    }
   });
+  return Math.round(Math.max(0,Math.min(100,total)));
 }
 
-function startDemo(){
-  SCHOOLS.forEach(function(s){
-    var r=DEMO[s.country];
-    sensorData[s.id]={temp:parseFloat(rand(r.temp[0],r.temp[1]).toFixed(1)),humid:parseFloat(rand(r.humid[0],r.humid[1]).toFixed(1)),light:Math.round(rand(r.light[0],r.light[1])),noise:parseFloat(rand(r.noise[0],r.noise[1]).toFixed(1))};
+function createMarker(school){
+  const s = calcScore(school.data, comfortRanges[currentPOV==='both'?school.country:currentPOV]);
+  const color = scoreColor(s);
+  const borderColor = school.country==='jp'?'var(--jp)':'var(--id)';
+  const size = 36;
+  const icon = L.divIcon({
+    className:'',
+    html:`<div class="custom-marker" style="width:${size}px;height:${size}px;background:${color};border-color:${school.country==='jp'?'#e8526a':'#3A9BE8'}">${s}</div>`,
+    iconSize:[size,size],iconAnchor:[size/2,size/2]
   });
-  refreshAll();
-  setInterval(function(){
-    SCHOOLS.forEach(function(s){
-      var r=DEMO[s.country],d=sensorData[s.id];
-      sensorData[s.id]={temp:nudge(d.temp,r.temp[0],r.temp[1],0.4),humid:nudge(d.humid,r.humid[0],r.humid[1],1.2),light:Math.round(nudge(d.light,r.light[0],r.light[1],30)),noise:nudge(d.noise,r.noise[0],r.noise[1],1.0)};
+  const marker = L.marker([school.lat,school.lng],{icon}).addTo(map);
+  marker.on('click',()=>openPopup(school,marker));
+  markers[school.id] = marker;
+}
+
+function openPopup(school, marker){
+  const d = school.data;
+  const jpScore = calcScore(d, comfortRanges.jp);
+  const idScore = calcScore(d, comfortRanges.id);
+  const cc = school.country;
+
+  let metricsHtml = '';
+  metrics.forEach(m=>{
+    const v = d[m.key];
+    const jpLo=comfortRanges.jp[m.key][0],jpHi=comfortRanges.jp[m.key][1];
+    const idLo=comfortRanges.id[m.key][0],idHi=comfortRanges.id[m.key][1];
+    const jpPct = Math.min(100,Math.max(0,((v-m.absMin)/(m.absMax-m.absMin))*100));
+    const jpRangeLo = ((jpLo-m.absMin)/(m.absMax-m.absMin))*100;
+    const jpRangeHi = ((jpHi-m.absMin)/(m.absMax-m.absMin))*100;
+    const idRangeLo = ((idLo-m.absMin)/(m.absMax-m.absMin))*100;
+    const idRangeHi = ((idHi-m.absMin)/(m.absMax-m.absMin))*100;
+
+    metricsHtml += `<div class="popup-metric">
+      <div class="pm-label">${m.icon} ${m.label}</div>
+      <div class="pm-value">${v.toFixed?v.toFixed(1):v}</div>
+      <div class="pm-unit">${m.unit}</div>
+      <div class="popup-dual-bar">
+        <div style="position:absolute;left:${jpRangeLo}%;width:${jpRangeHi-jpRangeLo}%;height:100%;background:rgba(232,82,106,.2);border-radius:3px;top:0"></div>
+        <div style="position:absolute;left:${idRangeLo}%;width:${idRangeHi-idRangeLo}%;height:100%;background:rgba(58,155,232,.2);border-radius:3px;top:0"></div>
+        <div style="position:absolute;left:${jpPct}%;top:-2px;width:3px;height:10px;background:${cc==='jp'?'#e8526a':'#3A9BE8'};border-radius:2px;"></div>
+      </div>
+    </div>`;
+  });
+
+  const radarSvg = buildRadarSVG(d);
+
+  const html = `
+    <div class="popup-title">${school.name}</div>
+    <span class="popup-country ${cc}">${cc==='jp'?'🇯🇵 日本':'🇮🇩 インドネシア'}</span>
+    <div class="popup-grid">${metricsHtml}</div>
+    <div class="popup-scores">
+      <div class="popup-score-box"><div class="ps-label">🇯🇵 JP Score</div><div class="ps-val" style="color:${scoreColor(jpScore)}">${jpScore}</div></div>
+      <div class="popup-score-box"><div class="ps-label">🇮🇩 ID Score</div><div class="ps-val" style="color:${scoreColor(idScore)}">${idScore}</div></div>
+    </div>
+    <div class="popup-radar">${radarSvg}</div>
+  `;
+  marker.bindPopup(html,{maxWidth:320,className:''}).openPopup();
+}
+
+function buildRadarSVG(data){
+  const size=140,cx=size/2,cy=size/2,r=50;
+  const labels=['温度','湿度','照度','騒音'];
+  const keys=['temp','humid','light','noise'];
+
+  function norm(key,val,ranges){
+    const lo=ranges[key][0],hi=ranges[key][1],mid=(lo+hi)/2,span=(hi-lo)/2;
+    return Math.max(0,Math.min(1,1-Math.abs(val-mid)/(span*2)));
+  }
+
+  function polyPoints(vals){
+    return vals.map((v,i)=>{
+      const angle = (Math.PI*2*i/4)-Math.PI/2;
+      const pr = v*r;
+      return `${cx+pr*Math.cos(angle)},${cy+pr*Math.sin(angle)}`;
+    }).join(' ');
+  }
+
+  const jpVals = keys.map(k=>norm(k,data[k],comfortRanges.jp));
+  const idVals = keys.map(k=>norm(k,data[k],comfortRanges.id));
+
+  let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+  // Grid
+  [.25,.5,.75,1].forEach(s=>{
+    const pts = [0,1,2,3].map(i=>{
+      const angle=(Math.PI*2*i/4)-Math.PI/2;
+      return `${cx+r*s*Math.cos(angle)},${cy+r*s*Math.sin(angle)}`;
+    }).join(' ');
+    svg+=`<polygon points="${pts}" fill="none" stroke="#2a2e3e" stroke-width="0.5"/>`;
+  });
+  // Axes
+  [0,1,2,3].forEach(i=>{
+    const angle=(Math.PI*2*i/4)-Math.PI/2;
+    svg+=`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(angle)}" y2="${cy+r*Math.sin(angle)}" stroke="#2a2e3e" stroke-width="0.5"/>`;
+    const lx=cx+(r+14)*Math.cos(angle), ly=cy+(r+14)*Math.sin(angle);
+    svg+=`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#8b8fa4" font-size="9" font-family="Noto Sans JP">${labels[i]}</text>`;
+  });
+  // JP polygon
+  svg+=`<polygon points="${polyPoints(jpVals)}" fill="rgba(232,82,106,.2)" stroke="#e8526a" stroke-width="1.5"/>`;
+  // ID polygon
+  svg+=`<polygon points="${polyPoints(idVals)}" fill="rgba(58,155,232,.2)" stroke="#3A9BE8" stroke-width="1.5"/>`;
+  svg+=`</svg>`;
+  return svg;
+}
+
+// ===== SIDEBAR: SCHOOL LIST =====
+function renderSchoolList(){
+  const container = document.getElementById('tab-list');
+  let html = '';
+  const filtered = currentPOV==='both'?schools:schools.filter(s=> currentPOV==='jp'?s.country==='jp':s.country==='id');
+  filtered.forEach(s=>{
+    const ref = currentPOV==='both'?s.country:currentPOV;
+    const score = calcScore(s.data, comfortRanges[ref]);
+    const color = scoreColor(score);
+    const circum = 2*Math.PI*17;
+    const offset = circum*(1-score/100);
+    html+=`<div class="school-card ${s.country}-card" onclick="flyTo('${s.id}')">
+      <div class="card-header">
+        <span class="card-name">${s.name}</span>
+        <span class="card-country ${s.country}">${s.country==='jp'?'🇯🇵 JP':'🇮🇩 ID'}</span>
+      </div>
+      <div class="card-ring-row">
+        <div class="ring-wrap">
+          <svg width="44" height="44"><circle cx="22" cy="22" r="17" fill="none" stroke="#2a2e3e" stroke-width="3.5"/>
+          <circle cx="22" cy="22" r="17" fill="none" stroke="${color}" stroke-width="3.5" stroke-dasharray="${circum}" stroke-dashoffset="${offset}" stroke-linecap="round"/></svg>
+          <div class="ring-score" style="color:${color}">${score}</div>
+        </div>
+        <div class="card-metrics">
+          <span>🌡️ ${s.data.temp.toFixed(1)}°C</span>
+          <span>💧 ${s.data.humid}%</span>
+          <span>☀️ ${s.data.light}lx</span>
+          <span>🔊 ${s.data.noise}dB</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function flyTo(id){
+  const s = schools.find(x=>x.id===id);
+  if(!s) return;
+  map.flyTo([s.lat,s.lng],8,{duration:1});
+  setTimeout(()=>openPopup(s,markers[id]),600);
+}
+
+// ===== SIDEBAR: SETTINGS =====
+function renderSliders(){
+  ['jp','id'].forEach(c=>{
+    const container = document.getElementById(c+'-sliders');
+    let html='';
+    metrics.forEach(m=>{
+      const lo=comfortRanges[c][m.key][0], hi=comfortRanges[c][m.key][1];
+      html+=`<div class="slider-group">
+        <div class="slider-label"><span>${m.icon} ${m.label}</span><span class="val" id="sv-${c}-${m.key}">${lo} – ${hi} ${m.unit}</span></div>
+        <div class="dual-range">
+          <input type="range" min="${m.absMin}" max="${m.absMax}" value="${lo}" step="1" oninput="updateRange('${c}','${m.key}','lo',this.value)">
+          <input type="range" min="${m.absMin}" max="${m.absMax}" value="${hi}" step="1" oninput="updateRange('${c}','${m.key}','hi',this.value)">
+        </div>
+      </div>`;
     });
-    refreshAll();
-    document.getElementById('stime').textContent=new Date().toLocaleTimeString('ja-JP');
-  },2000);
+    container.innerHTML = html;
+  });
+  renderInsight();
 }
 
-function setPov(p){
-  pov=p;
-  var m=POV_META[p];
-  document.documentElement.style.setProperty('--pov-color',m.color);
-  document.documentElement.style.setProperty('--pov-bg',m.bg);
-  document.getElementById('pov-jp').className='pov-btn'+(p==='JP'?' on-jp':'');
-  document.getElementById('pov-both').className='pov-btn'+(p==='BOTH'?' on-both':'');
-  document.getElementById('pov-id').className='pov-btn'+(p==='ID'?' on-id':'');
-  document.getElementById('pov-icon').textContent=m.icon;
-  document.getElementById('pov-label').textContent=m.label;
-  document.getElementById('pov-desc').textContent=m.desc;
-  var strip=document.getElementById('pov-strip');
-  strip.style.borderBottomColor=m.color;
-  strip.style.background=m.bg;
+function updateRange(country, key, bound, val){
+  val = Number(val);
+  if(bound==='lo') comfortRanges[country][key][0]=val;
+  else comfortRanges[country][key][1]=val;
+  if(comfortRanges[country][key][0]>comfortRanges[country][key][1]){
+    if(bound==='lo') comfortRanges[country][key][1]=val;
+    else comfortRanges[country][key][0]=val;
+  }
+  const m = metrics.find(x=>x.key===key);
+  document.getElementById(`sv-${country}-${key}`).textContent=`${comfortRanges[country][key][0]} – ${comfortRanges[country][key][1]} ${m.unit}`;
   refreshAll();
 }
 
-setPov('JP');
-startDemo();
+function renderInsight(){
+  let html='';
+  metrics.forEach(m=>{
+    const jpMid = (comfortRanges.jp[m.key][0]+comfortRanges.jp[m.key][1])/2;
+    const idMid = (comfortRanges.id[m.key][0]+comfortRanges.id[m.key][1])/2;
+    const diff = (idMid-jpMid).toFixed(1);
+    const cls = Number(diff)>0?'hot':'cool';
+    html+=`<tr><td>${m.icon} ${m.label}</td><td>${comfortRanges.jp[m.key][0]}–${comfortRanges.jp[m.key][1]}</td><td>${comfortRanges.id[m.key][0]}–${comfortRanges.id[m.key][1]}</td><td class="diff ${cls}">${diff>0?'+':''}${diff}</td></tr>`;
+  });
+  document.getElementById('insight-body').innerHTML=html;
+}
+
+// ===== POV =====
+function setPOV(pov){
+  currentPOV = pov;
+  document.querySelectorAll('.pov-btn').forEach(b=>b.classList.toggle('active',b.dataset.pov===pov));
+  const strip = document.getElementById('pov-strip');
+  strip.className = pov;
+  if(pov==='jp') strip.textContent='🇯🇵 日本目線モード — 日本の快適基準で全校を評価中';
+  else if(pov==='id') strip.textContent='🇮🇩 インドネシア目線モード — インドネシアの快適基準で全校を評価中';
+  else strip.textContent='🌏 グローバル比較モード — 日本・インドネシア両方の快適基準で評価中';
+  document.getElementById('status-pov').textContent='POV: '+(pov==='jp'?'日本':pov==='id'?'インドネシア':'両方');
+
+  const accent = pov==='jp'?'var(--jp)':pov==='id'?'var(--id)':'var(--both)';
+  document.documentElement.style.setProperty('--accent',accent);
+
+  if(pov==='jp') map.flyTo([36,139],6,{duration:1});
+  else if(pov==='id') map.flyTo([-2,118],5,{duration:1});
+  else map.flyTo([5,115],4,{duration:1});
+
+  refreshAll();
+}
+
+// ===== TABS =====
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['list','settings','connect'][i]===tab));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ===== COMPARE PANEL =====
+function updateCompare(){
+  const jpSchools = schools.filter(s=>s.country==='jp');
+  const idSchools = schools.filter(s=>s.country==='id');
+  const avg = (arr,key)=>(arr.reduce((s,x)=>s+x.data[key],0)/arr.length);
+  const jpAvg = {temp:avg(jpSchools,'temp'),humid:avg(jpSchools,'humid'),light:avg(jpSchools,'light'),noise:avg(jpSchools,'noise')};
+  const idAvg = {temp:avg(idSchools,'temp'),humid:avg(idSchools,'humid'),light:avg(idSchools,'light'),noise:avg(idSchools,'noise')};
+  const jpScore = calcScore(jpAvg, comfortRanges.jp);
+  const idScore = calcScore(idAvg, comfortRanges.id);
+
+  document.getElementById('cmp-jp-temp').textContent=jpAvg.temp.toFixed(1)+'°C';
+  document.getElementById('cmp-jp-humid').textContent=Math.round(jpAvg.humid)+'%';
+  document.getElementById('cmp-jp-light').textContent=Math.round(jpAvg.light)+'lx';
+  document.getElementById('cmp-jp-noise').textContent=Math.round(jpAvg.noise)+'dB';
+  document.getElementById('cmp-jp-score').textContent=jpScore;
+  document.getElementById('cmp-jp-score').style.color=scoreColor(jpScore);
+
+  document.getElementById('cmp-id-temp').textContent=idAvg.temp.toFixed(1)+'°C';
+  document.getElementById('cmp-id-humid').textContent=Math.round(idAvg.humid)+'%';
+  document.getElementById('cmp-id-light').textContent=Math.round(idAvg.light)+'lx';
+  document.getElementById('cmp-id-noise').textContent=Math.round(idAvg.noise)+'dB';
+  document.getElementById('cmp-id-score').textContent=idScore;
+  document.getElementById('cmp-id-score').style.color=scoreColor(idScore);
+}
+
+// ===== REFRESH =====
+function refreshAll(){
+  Object.values(markers).forEach(m=>map.removeLayer(m));
+  markers={};
+  const filtered = currentPOV==='both'?schools:schools.filter(s=>currentPOV==='jp'?s.country==='jp':s.country==='id');
+  filtered.forEach(createMarker);
+  renderSchoolList();
+  renderInsight();
+  updateCompare();
+}
+
+// ===== DEMO MODE =====
+function toggleDemo(){
+  const btn = document.getElementById('btn-demo');
+  if(demoInterval){
+    clearInterval(demoInterval);
+    demoInterval=null;
+    btn.textContent='▶ デモ開始';
+    btn.classList.remove('active');
+    setStatus('off','デモ停止');
+  } else {
+    demoInterval = setInterval(demoTick, 2000);
+    demoTick();
+    btn.textContent='⏹ デモ停止';
+    btn.classList.add('active');
+    setStatus('demo','デモモード稼働中');
+  }
+}
+
+function demoTick(){
+  schools.forEach(s=>{
+    const r = demoRanges[s.country];
+    s.data.temp = +(r.temp[0]+Math.random()*(r.temp[1]-r.temp[0])).toFixed(1);
+    s.data.humid = Math.round(r.humid[0]+Math.random()*(r.humid[1]-r.humid[0]));
+    s.data.light = Math.round(r.light[0]+Math.random()*(r.light[1]-r.light[0]));
+    s.data.noise = Math.round(r.noise[0]+Math.random()*(r.noise[1]-r.noise[0]));
+  });
+  refreshAll();
+}
+
+// ===== WEB SERIAL =====
+async function connectSerial(){
+  if(!('serial' in navigator)){
+    alert('このブラウザはWeb Serial APIに対応していません。Chrome/Edgeをお使いください。');
+    return;
+  }
+  try{
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({baudRate:9600});
+    setStatus('on','シリアル接続中');
+    const reader = serialPort.readable.getReader();
+    let buffer='';
+    while(true){
+      const {value,done}=await reader.read();
+      if(done) break;
+      buffer+=new TextDecoder().decode(value);
+      const lines=buffer.split('\n');
+      buffer=lines.pop();
+      lines.forEach(line=>{
+        const parts=line.trim().split(',');
+        if(parts.length>=5){
+          const sid=parts[0], temp=parseFloat(parts[1]), humid=parseFloat(parts[2]), light=parseFloat(parts[3]), noise=parseFloat(parts[4]);
+          const school=schools.find(s=>s.id===sid);
+          if(school){
+            school.data={temp,humid,light,noise};
+            refreshAll();
+          }
+        }
+      });
+    }
+  }catch(e){
+    console.error(e);
+    setStatus('off','接続エラー');
+  }
+}
+
+function setStatus(state, text){
+  const dot=document.getElementById('status-dot');
+  const txt=document.getElementById('status-text');
+  dot.className='status-dot '+state;
+  txt.textContent=text;
+}
+
+// ===== CLOCK =====
+function updateClock(){
+  const now=new Date();
+  document.getElementById('status-time').textContent=now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// ===== INIT =====
+renderSliders();
+refreshAll();
 </script>
 </body>
 </html>
