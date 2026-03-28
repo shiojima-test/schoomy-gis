@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SchooMy 学校環境比較マップ v4</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
+:root {
+  --bg:#f0f4f8; --panel:#fff; --panel2:#f5f8fb; --border:#dde4ec;
+  --text:#1a2433; --text2:#4a6080; --text3:#8faabb;
+  --teal:#3AABA8; --teal2:#2a8a87; --teal-bg:rgba(58,171,168,.09);
+  --orange:#E88A0A; --jp:#e8526a; --jp-bg:rgba(232,82,106,.1);
+  --id:#3A9BE8;   --id-bg:rgba(58,155,232,.1);
+  --shadow:0 4px 20px rgba(0,0,0,.10);
+  --pov-color:#e8526a; --pov-bg:rgba(232,82,106,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans JP','Meiryo',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* HEADER */
+header{height:56px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.07);z-index:1000;}
+.logo{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;letter-spacing:.06em;padding:5px 11px;border-radius:7px;flex-shrink:0;}
+.htitle{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;white-space:nowrap;}
+.sep{width:1px;height:22px;background:var(--border);flex-shrink:0;}
+
+/* POV SWITCHER */
+.pov-wrap{display:flex;flex-direction:column;gap:2px;}
+.pov-lbl{font-size:8px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;font-weight:700;}
+.pov-sw{display:flex;background:var(--panel2);border:1.5px solid var(--border);border-radius:30px;padding:3px;}
+.pov-btn{padding:5px 13px;border:none;border-radius:24px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Noto Sans JP',sans-serif;transition:all .2s;color:var(--text3);background:transparent;white-space:nowrap;}
+.pov-btn.on-jp{background:var(--jp);color:#fff;box-shadow:0 2px 10px rgba(232,82,106,.4);}
+.pov-btn.on-id{background:var(--id);color:#fff;box-shadow:0 2px 10px rgba(58,155,232,.4);}
+.pov-btn.on-both{background:linear-gradient(90deg,var(--jp),var(--id));color:#fff;box-shadow:0 2px 10px rgba(58,171,168,.3);}
+
+/* POV STRIP */
+.pov-strip{padding:5px 14px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px;border-bottom:2.5px solid var(--pov-color);background:var(--pov-bg);transition:all .3s;flex-shrink:0;}
+.pov-strip-label{color:var(--pov-color);}
+.pov-strip-desc{font-size:10px;color:var(--text3);font-weight:400;}
+
+/* STATUS */
+.sbar{height:28px;background:var(--panel2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:14px;font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;flex-shrink:0;}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--text3);display:inline-block;margin-right:4px;}
+.sdot.demo{background:var(--orange);box-shadow:0 0 5px var(--orange);}
+.sdot.live{background:var(--teal);box-shadow:0 0 5px var(--teal);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* LAYOUT */
+.main{display:flex;flex:1;overflow:hidden;position:relative;}
+
+/* SIDEBAR */
+.sidebar{width:315px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
+.tab-bar{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.tab-btn{flex:1;padding:9px 4px;border:none;background:transparent;font-size:11px;font-weight:700;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;font-family:'Noto Sans JP',sans-serif;}
+.tab-btn.active{color:var(--teal);border-bottom-color:var(--teal);background:var(--teal-bg);}
+.tab-panel{display:none;flex:1;overflow-y:auto;flex-direction:column;}
+.tab-panel.active{display:flex;}
+.tab-panel::-webkit-scrollbar{width:3px;}
+.tab-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* METRICS */
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:9px 11px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.metric-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:7px 9px;}
+
+/* SCHOOL CARDS */
+.school-list{padding:8px;}
+.group-hdr{font-size:9px;font-weight:700;padding:6px 4px 3px;text-transform:uppercase;letter-spacing:.1em;}
+.scard{border-radius:9px;padding:9px 11px;margin-bottom:5px;cursor:pointer;border:1.5px solid var(--border);background:var(--panel);transition:all .16s;display:flex;align-items:center;gap:8px;}
+.scard:hover{background:var(--panel2);transform:translateX(2px);}
+.scard.sel{border-color:var(--teal);background:var(--teal-bg);}
+.sc-flag{font-size:15px;flex-shrink:0;}
+.sc-info{flex:1;min-width:0;}
+.sc-name{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc-region{font-size:9px;color:var(--text3);}
+.sc-bars{display:flex;gap:3px;margin-top:4px;}
+.sc-bar-w{flex:1;}
+.sc-bar-lbl{font-size:8px;color:var(--text3);}
+.sc-bar-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:1px;}
+.sc-bar-fill{height:100%;border-radius:2px;transition:width .5s,background .5s;}
+.ring-wrap{flex-shrink:0;}
+
+/* COMFORT SETTINGS */
+.comfort-inner{padding:11px 13px;}
+.sb-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.13em;color:var(--text3);margin-bottom:8px;font-family:'Syne',sans-serif;}
+.pov-2col{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.pov-col{border-radius:10px;padding:10px;border:2px solid var(--border);transition:all .2s;}
+.pov-col.hl-jp{border-color:var(--jp);box-shadow:0 0 0 3px rgba(232,82,106,.1);}
+.pov-col.hl-id{border-color:var(--id);box-shadow:0 0 0 3px rgba(58,155,232,.1);}
+.pov-col-hdr{display:flex;align-items:center;gap:5px;margin-bottom:8px;}
+.pov-col-flag{font-size:16px;}
+.sensor-row{margin-bottom:8px;}
+.sr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.sr-val{font-family:'DM Mono',monospace;font-size:11px;}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;outline:none;cursor:pointer;background:var(--border);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--teal);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+input[type=range].jp-sl::-webkit-slider-thumb{background:var(--jp);}
+input[type=range].id-sl::-webkit-slider-thumb{background:var(--id);}
+
+.diff-insight{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:10px 11px;margin-top:10px;}
+.di-title{font-size:10px;font-weight:700;margin-bottom:8px;color:var(--text2);}
+.di-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.di-row:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+.di-icon{font-size:13px;flex-shrink:0;width:18px;}
+.di-bars{flex:1;}
+.di-bar-row{display:flex;align-items:center;gap:4px;margin-bottom:2px;}
+.di-bar-label{font-size:8px;font-weight:700;width:14px;}
+.di-bar-track{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;position:relative;}
+.di-bar-num{font-family:'DM Mono',monospace;font-size:8px;width:52px;text-align:right;}
+.di-verdict{font-size:9px;font-weight:700;flex-shrink:0;text-align:right;width:60px;}
+
+/* SERIAL */
+.serial-inner{padding:12px 13px;}
+.btn{padding:8px 12px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-family:'Noto Sans JP',sans-serif;font-weight:700;transition:all .15s;width:100%;margin-bottom:5px;}
+.btn-teal{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(58,171,168,.3);}
+.btn-teal:hover{background:var(--teal2);}
+.btn-teal:disabled{opacity:.4;cursor:not-allowed;}
+.btn-red{background:var(--jp-bg);color:var(--jp);border:1px solid rgba(232,82,106,.25);}
+.btn-red:disabled{opacity:.3;cursor:not-allowed;}
+.btn-demo{background:rgba(232,138,10,.1);color:var(--orange);border:1px solid rgba(232,138,10,.25);}
+.btn-demo.on{background:rgba(232,138,10,.2);}
+select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:11px;font-family:'Noto Sans JP',sans-serif;outline:none;cursor:pointer;margin-top:4px;}
+
+/* MAP */
+#map{flex:1;}
+.leaflet-control-zoom a{background:var(--panel)!important;color:var(--text)!important;border-color:var(--border)!important;}
+
+/* POPUP */
+.leaflet-popup-content-wrapper{background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:0;overflow:hidden;}
+.leaflet-popup-tip{background:var(--panel)!important;}
+.leaflet-popup-content{margin:0!important;}
+.pw{font-family:'Noto Sans JP','Meiryo',sans-serif;width:280px;}
+.ph{padding:12px 14px 10px;border-bottom:1px solid var(--border);}
+.ph-fn{display:flex;align-items:center;gap:8px;}
+.ph-flag{font-size:18px;}
+.ph-name{font-size:13px;font-weight:700;}
+.ph-region{font-size:10px;color:var(--text3);margin-top:1px;}
+.ph-dual{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px;}
+.ph-sbox{border-radius:8px;padding:8px 10px;border:1.5px solid var(--border);transition:all .3s;}
+.ph-sbox.pov-hl{border-color:var(--pov-color);box-shadow:0 0 0 2px var(--pov-bg);}
+.ph-sbox-pov{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;}
+.ph-sbox-num{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;line-height:1;}
+.ph-sbox-grade{font-size:10px;font-weight:700;margin-top:2px;}
+.ph-sbox-basis{font-size:8px;color:var(--text3);margin-top:1px;}
+.pb{padding:10px 14px 12px;}
+.pb-sensors{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.pb-sensor{background:var(--panel2);border-radius:7px;padding:7px 9px;}
+.pbs-top{display:flex;align-items:center;gap:4px;margin-bottom:2px;}
+.pbs-icon{font-size:12px;}
+.pbs-lbl{font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.pbs-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;line-height:1.1;}
+.pbs-val span{font-size:9px;color:var(--text3);}
+.dual-band-wrap{margin-top:4px;}
+.dual-band-row{display:flex;align-items:center;gap:3px;margin-bottom:2px;}
+.dbl{font-size:7px;font-weight:700;width:12px;}
+.db-track{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;position:relative;}
+.db-ideal{position:absolute;top:0;bottom:0;border-left:1.5px solid;border-right:1.5px solid;}
+.db-pin{position:absolute;top:0;bottom:0;width:3px;border-radius:2px;transform:translateX(-50%);}
+
+/* COMPARE BAR */
+.cbar{position:absolute;bottom:0;left:315px;right:0;background:rgba(255,255,255,.96);border-top:2.5px solid var(--pov-color);backdrop-filter:blur(8px);display:flex;align-items:stretch;z-index:500;height:64px;box-shadow:0 -4px 20px rgba(0,0,0,.08);transition:transform .3s,border-color .3s;}
+.cbar.hidden{transform:translateY(100%);}
+.cbar-toggle{position:absolute;right:10px;top:-26px;background:var(--panel);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:3px 10px;font-size:10px;color:var(--text2);cursor:pointer;font-family:'Noto Sans JP',sans-serif;box-shadow:0 -2px 8px rgba(0,0,0,.06);}
+.cblock{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 10px;border-right:1px solid var(--border);}
+.cblock:last-child{border-right:none;}
+.clbl{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:1px;}
+.cvals{display:flex;align-items:baseline;gap:5px;}
+.cvjp{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--jp);}
+.cvid{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--id);}
+.cu{font-size:8px;color:var(--text3);}
+.cdiff{font-size:10px;font-weight:700;}
+.cdiff.pos{color:var(--teal);}
+.cdiff.neg{color:var(--jp);}
+
+/* MAP LEGEND */
+.map-legend{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);min-width:155px;}
+.ml-title{font-size:10px;font-weight:700;margin-bottom:7px;font-family:'Syne',sans-serif;}
+.ml-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;color:var(--text2);font-size:11px;}
+.ml-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+.ml-sep{height:1px;background:var(--border);margin:6px 0;}
+
+/* MODAL */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;}
+.modal-ov.show{display:flex;}
+.modal-box{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px;width:300px;box-shadow:var(--shadow);}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="htitle">学校環境比較マップ</span>
+  <div class="sep"></div>
+  <div class="pov-wrap">
+    <div class="pov-lbl">👁 評価する視点</div>
+    <div class="pov-sw">
+      <button class="pov-btn" id="pov-jp"   onclick="setPov('JP')">🇯🇵 日本目線</button>
+      <button class="pov-btn" id="pov-both" onclick="setPov('BOTH')">🌏 両方</button>
+      <button class="pov-btn" id="pov-id"   onclick="setPov('ID')">🇮🇩 インドネシア目線</button>
+    </div>
+  </div>
+  <button class="btn btn-teal" id="btn-con-header" onclick="connectSerial()" style="margin-left:auto;width:auto;padding:6px 14px;font-size:11px;margin-bottom:0">🔌 シリアル接続</button>
+  <span style="font-size:10px;color:var(--text3)">● DEMO</span>
+</header>
+
+<div class="pov-strip" id="pov-strip">
+  <span id="pov-icon" style="font-size:15px">🇯🇵</span>
+  <span class="pov-strip-label" id="pov-label">日本の快適基準で全校を評価中</span>
+  <span class="pov-strip-desc" id="pov-desc">— インドネシアの学校も日本の「快適」で採点されます</span>
+</div>
+
+<div class="sbar">
+  <span><span class="sdot demo" id="sdot"></span><span id="stext">デモモード稼働中</span></span>
+  <span id="stime" style="margin-left:auto;color:var(--text3)"></span>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="metrics-grid" id="metrics-grid"></div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('list',this)">📋 学校一覧</button>
+      <button class="tab-btn" onclick="switchTab('comfort',this)">⚙️ 快適設定</button>
+      <button class="tab-btn" onclick="switchTab('serial',this)">🔌 接続</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-list">
+      <div class="school-list" id="school-list"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-comfort">
+      <div class="comfort-inner">
+        <div class="sb-lbl">各国の「快適だと感じる範囲」を設定</div>
+        <p style="font-size:10px;color:var(--text2);line-height:1.65;margin-bottom:12px;background:var(--teal-bg);padding:8px 10px;border-radius:8px;border-left:3px solid var(--teal)">
+          💡 <strong>視点ボタン</strong>を切り替えると、同じデータでも地図の色が変わります。<br>
+          インドネシアの生徒が設定 → 日本の学校が「寒い🥶」になるかも？
+        </p>
+        <div class="pov-2col">
+          <div class="pov-col" id="pov-col-JP">
+            <div class="pov-col-hdr"><span class="pov-col-flag">🇯🇵</span><span style="font-size:11px;font-weight:700;color:var(--jp)">日本の快適範囲</span></div>
+            <div id="sliders-JP"></div>
+          </div>
+          <div class="pov-col" id="pov-col-ID">
+            <div class="pov-col-hdr"><span class="pov-col-flag">🇮🇩</span><span style="font-size:11px;font-weight:700;color:var(--id)">インドネシアの快適範囲</span></div>
+            <div id="sliders-ID"></div>
+          </div>
+        </div>
+        <div class="diff-insight" id="diff-insight"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-serial">
+      <div class="serial-inner">
+        <div class="sb-lbl">Web Serial API（オレンジボード）</div>
+        <button class="btn btn-teal" id="btn-con" onclick="connectSerial()">🔌 デバイスに接続</button>
+        <button class="btn btn-red"  id="btn-dis" onclick="disconnectSerial()" disabled>切断</button>
+        <div id="serial-opts" style="display:none;margin-top:8px">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:3px">接続先の学校</div>
+          <select id="sel-school"></select>
+          <div style="font-size:10px;color:var(--text2);margin-top:8px;margin-bottom:3px">センサー種別</div>
+          <select id="sel-sensor">
+            <option value="temp">🌡 温度 (℃)</option>
+            <option value="humid">💧 湿度 (%)</option>
+            <option value="light">💡 照度 (lux)</option>
+            <option value="noise">🔊 騒音 (dB)</option>
+          </select>
+          <div style="font-size:9px;color:var(--text3);margin-top:6px">Arduino: Serial.println(値); // 9600baud</div>
+        </div>
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+          <button class="btn btn-demo" id="btn-demo" onclick="toggleDemo()">▶ デモデータ ON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="cbar hidden" id="cbar">
+    <div class="cbar-toggle" onclick="toggleCbar()">比較パネル ▲</div>
+    <div class="cblock"><div class="clbl">🌡 温度</div><div class="cvals"><span class="cvjp" id="c-t-jp">—</span><span class="cu">℃</span><span style="font-size:10px;color:var(--text3)">vs</span><span class="cvid" id="c-t-id">—</span><span class="cu">℃</span><span class="cdiff" id="c-t-d"></span></div></div>
+    <div class="cblock"><div class="clbl">💧 湿度</div><div class="cvals"><span class="cvjp" id="c-h-jp">—</span><span class="cu">%</span><span style="font-size:10px;color:var(--text3)">vs</span><span class="cvid" id="c-h-id">—</span><span class="cu">%</span><span class="cdiff" id="c-h-d"></span></div></div>
+    <div class="cblock"><div class="clbl">💡 照度</div><div class="cvals"><span class="cvjp" id="c-l-jp">—</span><span class="cu">lx</span><span style="font-size:10px;color:var(--text3)">vs</span><span class="cvid" id="c-l-id">—</span><span class="cu">lx</span><span class="cdiff" id="c-l-d"></span></div></div>
+    <div class="cblock"><div class="clbl">🔊 騒音</div><div class="cvals"><span class="cvjp" id="c-n-jp">—</span><span class="cu">dB</span><span style="font-size:10px;color:var(--text3)">vs</span><span class="cvid" id="c-n-id">—</span><span class="cu">dB</span><span class="cdiff" id="c-n-d"></span></div></div>
+    <div class="cblock" style="border-right:none"><div class="clbl">快適スコア <span id="c-pov-note" style="font-size:8px;color:var(--text3);font-style:italic">(🇯🇵目線)</span></div><div class="cvals"><span class="cvjp" id="c-s-jp">—</span><span style="font-size:10px;color:var(--text3)">vs</span><span class="cvid" id="c-s-id">—</span><span class="cdiff" id="c-s-d"></span></div></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="modal">
+  <div class="modal-box">
+    <h3 style="color:var(--jp);font-size:14px;margin-bottom:8px">⚠ Web Serial API 非対応</h3>
+    <p style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px">Chrome または Edge でお使いください。</p>
+    <button class="btn btn-teal" onclick="document.getElementById('modal').classList.remove('show')">閉じる</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// 1. POV STATE — declared first so all code can use it
+// ════════════════════════════════════════════════════
+var pov = 'JP';
+
+var POV_META = {
+  JP:   { color:'#e8526a', bg:'rgba(232,82,106,.08)', icon:'🇯🇵',
+          label:'日本の快適基準で全校を評価中',
+          desc:'— インドネシアの学校も日本の「快適」で採点されます' },
+  ID:   { color:'#3A9BE8', bg:'rgba(58,155,232,.08)',  icon:'🇮🇩',
+          label:'インドネシアの快適基準で全校を評価中',
+          desc:'— 日本の学校もインドネシアの「快適」で採点されます' },
+  BOTH: { color:'#3AABA8', bg:'rgba(58,171,168,.08)',  icon:'🌏',
+          label:'日本・インドネシア両方の視点で比較中',
+          desc:'— 左が🇯🇵スコア、右が🇮🇩スコアです' }
+};
+
+// ════════════════════════════════════════════════════
+// 2. SCHOOLS & SENSORS
+// ════════════════════════════════════════════════════
+var SCHOOLS = [
+  { id:'SS', country:'JP', name:'静岡サレジオ高校',    region:'静岡市, 静岡県',         lat:34.9756, lng:138.3828 },
+  { id:'YM', country:'JP', name:'山梨学院高校',         region:'甲府市, 山梨県',          lat:35.6622, lng:138.5686 },
+  { id:'TG', country:'JP', name:'鶴岡工業高等専門学校', region:'鶴岡市, 山形県',          lat:38.7142, lng:139.8298 },
+  { id:'CK', country:'ID', name:'SDH Cikarang',         region:'Bekasi, Jawa Barat',     lat:-6.3466, lng:107.1568 },
+  { id:'LV', country:'ID', name:'SDH Lippo Village',    region:'Tangerang, Banten',      lat:-6.2256, lng:106.6193 },
+  { id:'DM', country:'ID', name:'SDH Daan Mogot',       region:'Jakarta Barat',          lat:-6.1677, lng:106.7469 },
+  { id:'MK', country:'ID', name:'SDH Makassar',         region:'Makassar, Sulawesi',     lat:-5.163,  lng:119.434  },
+  { id:'RN', country:'ID', name:'SDH Ranotana',         region:'Manado, Sulawesi Utara', lat:1.4754,  lng:124.8272 },
+  { id:'MD', country:'ID', name:'SDH Medan',            region:'Medan, Sumatera Utara',  lat:3.5912,  lng:98.6739  },
+  { id:'BG', country:'ID', name:'SDH Bogor',            region:'Bogor, Jawa Barat',      lat:-6.589,  lng:106.808  },
+  { id:'JG', country:'ID', name:'SDH Jogja',            region:'Yogyakarta, DIY',        lat:-7.7875, lng:110.369  },
+  { id:'SB', country:'ID', name:'SDH Surabaya',         region:'Surabaya, Jawa Timur',   lat:-7.3265, lng:112.734  },
+  { id:'AM', country:'ID', name:'SDH Ambon',            region:'Ambon, Maluku',          lat:-3.6954, lng:128.181  },
+  { id:'KP', country:'ID', name:'SDH Kupang',           region:'Kupang, NTT',            lat:-10.177, lng:123.607  }
+];
+
+var SENSORS = {
+  temp:  { icon:'🌡', label:'温度',  unit:'℃',  min:10, max:45,   step:0.5 },
+  humid: { icon:'💧', label:'湿度',  unit:'%',   min:10, max:99,   step:1   },
+  light: { icon:'💡', label:'照度',  unit:'lx',  min:50, max:2000, step:10  },
+  noise: { icon:'🔊', label:'騒音',  unit:'dB',  min:25, max:95,   step:1   }
+};
+var SKEYS = ['temp','humid','light','noise'];
+
+// ════════════════════════════════════════════════════
+// 3. COMFORT SETTINGS — two independent country sets
+// ════════════════════════════════════════════════════
+var comfort = {
+  JP: { temp:[20,26], humid:[40,60], light:[300,700],  noise:[35,55] },
+  ID: { temp:[26,33], humid:[55,82], light:[400,1000], noise:[42,68] }
+};
+
+// ════════════════════════════════════════════════════
+// 4. SENSOR DATA
+// ════════════════════════════════════════════════════
+var sensorData = {};
+SCHOOLS.forEach(function(s) {
+  sensorData[s.id] = { temp:null, humid:null, light:null, noise:null };
+});
+
+// ════════════════════════════════════════════════════
+// 5. SCORING
+// ════════════════════════════════════════════════════
+function calcScore(schoolId, fromCtry) {
+  var d = sensorData[schoolId];
+  var c = comfort[fromCtry];
+  var scores = SKEYS.map(function(k) {
+    if (d[k] === null) return null;
+    var lo = c[k][0], hi = c[k][1];
+    var mid = (lo + hi) / 2, half = (hi - lo) / 2;
+    return Math.round(Math.max(0, 1 - Math.abs(d[k] - mid) / (half * 2)) * 100);
+  }).filter(function(v) { return v !== null; });
+  return scores.length ? Math.round(scores.reduce(function(a,b){return a+b;}) / scores.length) : null;
+}
+
+function scoreColor(s) {
+  if (s === null) return '#b0c4d4';
+  if (s >= 75) return '#3AABA8';
+  if (s >= 55) return '#5dc573';
+  if (s >= 35) return '#f0c040';
+  return '#e55a4e';
+}
+
+function scoreGrade(s) {
+  if (s === null) return '—';
+  if (s >= 80) return '😊 快適';
+  if (s >= 65) return '🙂 良好';
+  if (s >= 45) return '😐 普通';
+  if (s >= 30) return '😓 やや不快';
+  return '😰 不快';
+}
+
+// ════════════════════════════════════════════════════
+// 6. MAP
+// ════════════════════════════════════════════════════
+var map = L.map('map', { center:[0,115], zoom:4, zoomControl:true, attributionControl:false }).setView([0,115], 4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18 }).addTo(map);
+L.control.attribution({ prefix:'© OpenStreetMap | SchooMy' }).addTo(map);
+
+var legendCtrl = null;
+function renderLegend() {
+  if (legendCtrl) legendCtrl.remove();
+  legendCtrl = L.control({ position:'bottomright' });
+  legendCtrl.onAdd = function() {
+    var d = L.DomUtil.create('div', 'map-legend');
+    var m = POV_META[pov];
+    d.innerHTML =
+      '<div class="ml-title" style="color:'+m.color+'">'+m.icon+' 快適スコア</div>' +
+      '<div class="ml-row"><div class="ml-dot" style="background:#3AABA8"></div>75〜 快適</div>' +
+      '<div class="ml-row"><div class="ml-dot" style="background:#5dc573"></div>55〜75 良好</div>' +
+      '<div class="ml-row"><div class="ml-dot" style="background:#f0c040"></div>35〜55 普通</div>' +
+      '<div class="ml-row"><div class="ml-dot" style="background:#e55a4e"></div>〜35 不快</div>' +
+      '<div class="ml-sep"></div>' +
+      '<div style="font-size:9px;color:var(--text3);font-style:italic">'+m.label+'</div>' +
+      '<div class="ml-sep"></div>' +
+      '<div class="ml-row"><div class="ml-dot" style="border:3px solid #e8526a;background:#fff"></div>🇯🇵 日本校</div>' +
+      '<div class="ml-row"><div class="ml-dot" style="border:3px solid #3A9BE8;background:#fff"></div>🇮🇩 SDH校</div>';
+    return d;
+  };
+  legendCtrl.addTo(map);
+}
+
+// ════════════════════════════════════════════════════
+// 7. MARKERS
+// ════════════════════════════════════════════════════
+var markers = {};
+
+function makeIcon(school) {
+  var SZ = 36;
+  var border = school.country === 'JP' ? '#e8526a' : '#3A9BE8';
+
+  if (pov === 'BOTH') {
+    var scJP = calcScore(school.id, 'JP');
+    var scID = calcScore(school.id, 'ID');
+    var cJP = scoreColor(scJP), cID = scoreColor(scID);
+    var lJP = scJP !== null ? scJP : '—';
+    var lID = scID !== null ? scID : '—';
+    var html = '<div style="transform:translate(-50%,-50%);display:flex;gap:2px;width:'+(SZ*2+2)+'px;height:'+SZ+'px">' +
+      '<div style="width:'+SZ+'px;height:'+SZ+'px;border-radius:50%;background:'+cJP+';border:2.5px solid #e8526a;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;">' +
+        '<span style="font-size:9px;font-weight:700;color:#fff;font-family:\'DM Mono\',monospace">'+lJP+'</span></div>' +
+      '<div style="width:'+SZ+'px;height:'+SZ+'px;border-radius:50%;background:'+cID+';border:2.5px solid #3A9BE8;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;">' +
+        '<span style="font-size:9px;font-weight:700;color:#fff;font-family:\'DM Mono\',monospace">'+lID+'</span></div>' +
+    '</div>';
+    return L.divIcon({ html:html, className:'', iconSize:[SZ*2+2, SZ], iconAnchor:[SZ+1, SZ/2] });
+  }
+
+  var sc = calcScore(school.id, pov);
+  var col = scoreColor(sc);
+  var label = sc !== null ? sc : '—';
+  var html2 = '<div style="width:'+SZ+'px;height:'+SZ+'px;border-radius:50%;background:'+col+';border:3px solid '+border+';box-shadow:0 2px 10px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)">' +
+    '<span style="font-size:11px;font-weight:700;color:#fff;font-family:\'DM Mono\',monospace;text-shadow:0 1px 2px rgba(0,0,0,.3)">'+label+'</span></div>';
+  return L.divIcon({ html:html2, className:'', iconSize:[SZ, SZ], iconAnchor:[SZ/2, SZ/2] });
+}
+
+function buildPopup(school) {
+  var d = sensorData[school.id];
+  var flag = school.country === 'JP' ? '🇯🇵' : '🇮🇩';
+  var scJP = calcScore(school.id, 'JP');
+  var scID = calcScore(school.id, 'ID');
+  var cJP = scoreColor(scJP), cID = scoreColor(scID);
+
+  var panels = SKEYS.map(function(key) {
+    var meta = SENSORS[key], val = d[key];
+    var jlo = comfort.JP[key][0], jhi = comfort.JP[key][1];
+    var ilo = comfort.ID[key][0], ihi = comfort.ID[key][1];
+    var fR = meta.max - meta.min;
+    var pJL = ((jlo-meta.min)/fR)*100, pJH = ((jhi-meta.min)/fR)*100;
+    var pIL = ((ilo-meta.min)/fR)*100, pIH = ((ihi-meta.min)/fR)*100;
+    var pV = val !== null ? Math.min(100, Math.max(0, ((val-meta.min)/fR)*100)) : null;
+    var pinStr = pV !== null ?
+      '<div class="db-pin" style="left:'+pV+'%;background:'+cJP+'"></div>' : '';
+    var pinStr2 = pV !== null ?
+      '<div class="db-pin" style="left:'+pV+'%;background:'+cID+'"></div>' : '';
+    return '<div class="pb-sensor">' +
+      '<div class="pbs-top"><span class="pbs-icon">'+meta.icon+'</span><span class="pbs-lbl">'+meta.label+'</span></div>' +
+      '<div class="pbs-val">'+(val!==null?(key==='light'?Math.round(val):val.toFixed(1)):'—')+'<span>'+meta.unit+'</span></div>' +
+      '<div class="dual-band-wrap">' +
+        '<div class="dual-band-row"><span class="dbl" style="color:#e8526a">JP</span>' +
+          '<div class="db-track"><div class="db-ideal" style="left:'+pJL+'%;width:'+(pJH-pJL)+'%;background:rgba(232,82,106,.2);border-color:#e8526a"></div>'+pinStr+'</div>' +
+          '<span style="font-size:8px;color:#e8526a;width:44px;text-align:right;font-family:\'DM Mono\',monospace">'+jlo+'〜'+jhi+'</span></div>' +
+        '<div class="dual-band-row"><span class="dbl" style="color:#3A9BE8">ID</span>' +
+          '<div class="db-track"><div class="db-ideal" style="left:'+pIL+'%;width:'+(pIH-pIL)+'%;background:rgba(58,155,232,.2);border-color:#3A9BE8"></div>'+pinStr2+'</div>' +
+          '<span style="font-size:8px;color:#3A9BE8;width:44px;text-align:right;font-family:\'DM Mono\',monospace">'+ilo+'〜'+ihi+'</span></div>' +
+      '</div></div>';
+  }).join('');
+
+  // Radar
+  function perSensor(ctry) {
+    return SKEYS.map(function(k) {
+      if (d[k] === null) return 0;
+      var lo=comfort[ctry][k][0], hi=comfort[ctry][k][1];
+      var mid=(lo+hi)/2, half=(hi-lo)/2;
+      return Math.round(Math.max(0, 1-Math.abs(d[k]-mid)/(half*2))*100);
+    });
+  }
+  var sJP = perSensor('JP'), sID = perSensor('ID');
+  var cx=65, cy=65, R=46;
+  var angs = SKEYS.map(function(_,i){ return (Math.PI*2/4)*i - Math.PI/2; });
+  function gp(arr) { return arr.map(function(p){ return p.join(','); }).join(' '); }
+  function pp(arr) { return arr.map(function(s,i){ return [cx+(s/100*R)*Math.cos(angs[i]), cy+(s/100*R)*Math.sin(angs[i])]; }); }
+  var grids = [.25,.5,.75,1].map(function(f){
+    var pts = angs.map(function(a){ return [cx+f*R*Math.cos(a), cy+f*R*Math.sin(a)]; });
+    return '<polygon points="'+gp(pts)+'" fill="none" stroke="#dde4ec" stroke-width="1"/>';
+  }).join('');
+  var axes = angs.map(function(a){ return '<line x1="'+cx+'" y1="'+cy+'" x2="'+(cx+R*Math.cos(a))+'" y2="'+(cy+R*Math.sin(a))+'" stroke="#dde4ec" stroke-width="1"/>'; }).join('');
+  var lbls = ['🌡','💧','💡','🔊'].map(function(ic,i){
+    var lx=cx+(R+13)*Math.cos(angs[i]), ly=cy+(R+13)*Math.sin(angs[i]);
+    return '<text x="'+lx+'" y="'+ly+'" text-anchor="middle" dominant-baseline="middle" font-size="12">'+ic+'</text>';
+  }).join('');
+  var radar = '<svg width="130" height="130" viewBox="0 0 130 130">'+grids+axes+
+    '<polygon points="'+gp(pp(sJP))+'" fill="rgba(232,82,106,.2)" stroke="#e8526a" stroke-width="1.5" stroke-dasharray="3,2"/>'+
+    '<polygon points="'+gp(pp(sID))+'" fill="rgba(58,155,232,.2)" stroke="#3A9BE8" stroke-width="1.5" stroke-dasharray="3,2"/>'+
+    lbls+'<text x="8" y="126" font-size="7" fill="#e8526a">🇯🇵JP</text><text x="48" y="126" font-size="7" fill="#3A9BE8">🇮🇩ID</text></svg>';
+
+  var hlJP = (pov==='JP'||pov==='BOTH') ? ' pov-hl' : '';
+  var hlID = (pov==='ID'||pov==='BOTH') ? ' pov-hl' : '';
+
+  return '<div class="pw">' +
+    '<div class="ph">' +
+      '<div class="ph-fn"><span class="ph-flag">'+flag+'</span><div><div class="ph-name">'+school.name+'</div><div class="ph-region">'+school.region+'</div></div></div>' +
+      '<div class="ph-dual">' +
+        '<div class="ph-sbox'+hlJP+'"><div class="ph-sbox-pov" style="color:#e8526a">🇯🇵 日本目線</div>' +
+          '<div class="ph-sbox-num" style="color:'+cJP+'">'+(scJP!==null?scJP:'—')+'</div>' +
+          '<div class="ph-sbox-grade">'+scoreGrade(scJP)+'</div><div class="ph-sbox-basis">日本の快適基準で採点</div></div>' +
+        '<div class="ph-sbox'+hlID+'"><div class="ph-sbox-pov" style="color:#3A9BE8">🇮🇩 インドネシア目線</div>' +
+          '<div class="ph-sbox-num" style="color:'+cID+'">'+(scID!==null?scID:'—')+'</div>' +
+          '<div class="ph-sbox-grade">'+scoreGrade(scID)+'</div><div class="ph-sbox-basis">IDの快適基準で採点</div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="pb"><div class="pb-sensors">'+panels+'</div>' +
+      '<div style="display:flex;justify-content:center;margin-bottom:6px"><div style="background:var(--panel2);border-radius:8px;padding:6px">'+radar+'</div></div>' +
+      '<div style="font-size:9px;color:var(--text3);text-align:right">SchooMy 学校環境センサーシステム</div></div></div>';
+}
+
+SCHOOLS.forEach(function(s) {
+  var m = L.marker([s.lat, s.lng], { icon: makeIcon(s) }).addTo(map);
+  m.bindPopup(buildPopup(s), { maxWidth:300 });
+  m.on('click', function(){ selectSchool(s.id); });
+  markers[s.id] = m;
+});
+
+// ════════════════════════════════════════════════════
+// 8. SCHOOL CARDS
+// ════════════════════════════════════════════════════
+var activeSchoolId = SCHOOLS[0].id;
+
+function renderCards() {
+  var c = document.getElementById('school-list');
+  c.innerHTML = '';
+  [['JP','🇯🇵 日本','#e8526a'],['ID','🇮🇩 インドネシア SDH','#3A9BE8']].forEach(function(grp) {
+    var ctry=grp[0], lbl=grp[1], col=grp[2];
+    var hdr = document.createElement('div');
+    hdr.className = 'group-hdr'; hdr.style.color = col; hdr.textContent = lbl;
+    c.appendChild(hdr);
+    SCHOOLS.filter(function(s){ return s.country===ctry; }).forEach(function(s) {
+      var d = sensorData[s.id];
+      var activePov = pov === 'ID' ? comfort.ID : comfort.JP;
+      var sc = pov==='ID' ? calcScore(s.id,'ID') : calcScore(s.id,'JP');
+      var scCol = scoreColor(sc);
+      var card = document.createElement('div');
+      card.className = 'scard' + (s.id===activeSchoolId ? ' sel' : '');
+      card.id = 'card-' + s.id;
+      var bars = SKEYS.map(function(key) {
+        var meta=SENSORS[key], v=d[key];
+        var pct = v!==null ? Math.min(100,Math.max(0,((v-meta.min)/(meta.max-meta.min))*100)) : 0;
+        var lo=activePov[key][0], hi=activePov[key][1];
+        var mid=(lo+hi)/2, half=(hi-lo)/2;
+        var ss = v!==null ? Math.round(Math.max(0,1-Math.abs(v-mid)/(half*2))*100) : null;
+        return '<div class="sc-bar-w"><div class="sc-bar-lbl">'+meta.icon+' '+meta.label+'</div>' +
+          '<div class="sc-bar-bg"><div class="sc-bar-fill" style="width:'+pct+'%;background:'+scoreColor(ss)+'"></div></div></div>';
+      }).join('');
+      card.innerHTML =
+        '<span class="sc-flag">'+(ctry==='JP'?'🇯🇵':'🇮🇩')+'</span>' +
+        '<div class="sc-info"><div class="sc-name">'+s.name+'</div><div class="sc-region">'+s.region+'</div>' +
+        '<div class="sc-bars">'+bars+'</div></div>' +
+        makeRing(sc, scCol);
+      card.onclick = function() {
+        selectSchool(s.id);
+        map.flyTo([s.lat, s.lng], 10, { duration:1 });
+        markers[s.id].openPopup();
+      };
+      c.appendChild(card);
+    });
+  });
+}
+
+function makeRing(sc, col) {
+  var r=16, circ=2*Math.PI*r, dash=((sc||0)/100)*circ;
+  return '<div class="ring-wrap"><svg width="42" height="42" viewBox="0 0 42 42">' +
+    '<circle cx="21" cy="21" r="'+r+'" fill="none" stroke="#e8edf2" stroke-width="3"/>' +
+    '<circle cx="21" cy="21" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="3"' +
+      ' stroke-dasharray="'+dash+' '+(circ-dash)+'" stroke-dashoffset="'+(circ/4)+'" stroke-linecap="round"/>' +
+    '<text x="21" y="21" text-anchor="middle" dominant-baseline="middle"' +
+      ' font-size="10" font-weight="600" fill="'+col+'" font-family="\'DM Mono\',monospace">'+(sc!==null?sc:'—')+'</text>' +
+    '</svg></div>';
+}
+
+function selectSchool(id) {
+  activeSchoolId = id;
+  document.querySelectorAll('.scard').forEach(function(c){ c.classList.remove('sel'); });
+  var card = document.getElementById('card-'+id);
+  if (card) { card.classList.add('sel'); card.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+}
+
+// ════════════════════════════════════════════════════
+// 9. COMFORT SLIDERS
+// ════════════════════════════════════════════════════
+function buildSliders(ctry) {
+  var col = ctry==='JP' ? '#e8526a' : '#3A9BE8';
+  var slCls = ctry==='JP' ? 'jp-sl' : 'id-sl';
+  return SKEYS.map(function(key) {
+    var meta=SENSORS[key], lo=comfort[ctry][key][0], hi=comfort[ctry][key][1];
+    return '<div class="sensor-row">' +
+      '<div class="sr-top">' +
+        '<span style="font-size:11px;display:flex;align-items:center;gap:4px">'+meta.icon+' '+meta.label+'</span>' +
+        '<span class="sr-val" id="sv-'+ctry+'-'+key+'" style="color:'+col+'">'+lo+'〜'+hi+meta.unit+'</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">' +
+        '<span style="font-size:8px;color:var(--text3);width:20px">下限</span>' +
+        '<input type="range" class="'+slCls+'" min="'+meta.min+'" max="'+meta.max+'" step="'+meta.step+'" value="'+lo+'"' +
+          ' id="sl-lo-'+ctry+'-'+key+'" oninput="onSlide(\''+ctry+'\',\''+key+'\',\'lo\',this.value)">' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:4px">' +
+        '<span style="font-size:8px;color:var(--text3);width:20px">上限</span>' +
+        '<input type="range" class="'+slCls+'" min="'+meta.min+'" max="'+meta.max+'" step="'+meta.step+'" value="'+hi+'"' +
+          ' id="sl-hi-'+ctry+'-'+key+'" oninput="onSlide(\''+ctry+'\',\''+key+'\',\'hi\',this.value)">' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+document.getElementById('sliders-JP').innerHTML = buildSliders('JP');
+document.getElementById('sliders-ID').innerHTML = buildSliders('ID');
+
+function onSlide(ctry, key, lohi, rawVal) {
+  var meta=SENSORS[key], val=parseFloat(rawVal);
+  var lo=parseFloat(document.getElementById('sl-lo-'+ctry+'-'+key).value);
+  var hi=parseFloat(document.getElementById('sl-hi-'+ctry+'-'+key).value);
+  if (lohi==='lo' && val>=hi) { lo=hi-meta.step; document.getElementById('sl-lo-'+ctry+'-'+key).value=lo; }
+  else if (lohi==='hi' && val<=lo) { hi=lo+meta.step; document.getElementById('sl-hi-'+ctry+'-'+key).value=hi; }
+  else { if(lohi==='lo') lo=val; else hi=val; }
+  comfort[ctry][key] = [lo, hi];
+  document.getElementById('sv-'+ctry+'-'+key).textContent = lo+'〜'+hi+meta.unit;
+  renderDiffInsight();
+  refreshAll();
+}
+
+function renderDiffInsight() {
+  var el = document.getElementById('diff-insight');
+  if (!el) return;
+  var rows = SKEYS.map(function(key) {
+    var meta=SENSORS[key];
+    var jl=comfort.JP[key][0], jh=comfort.JP[key][1];
+    var il=comfort.ID[key][0], ih=comfort.ID[key][1];
+    var midJP=(jl+jh)/2, midID=(il+ih)/2, diff=midID-midJP;
+    var absD=Math.abs(diff).toFixed(key==='light'?0:1);
+    var fR=meta.max-meta.min;
+    var pjl=((jl-meta.min)/fR)*100, pjh=((jh-meta.min)/fR)*100;
+    var pil=((il-meta.min)/fR)*100, pih=((ih-meta.min)/fR)*100;
+    var verdict='', vCol='var(--text3)';
+    if (Math.abs(diff)<1) { verdict='ほぼ同じ'; vCol='var(--teal)'; }
+    else if (key==='noise') { verdict=diff>0?'IDが騒音耐性↑':'JPが騒音耐性↑'; vCol=diff>0?'#3A9BE8':'#e8526a'; }
+    else if (key==='temp')  { verdict=diff>0?'IDは暑さ好み':'JPは涼しさ好み'; vCol=diff>0?'#3A9BE8':'#e8526a'; }
+    else if (key==='humid') { verdict=diff>0?'IDは多湿OK':'JPは乾燥OK'; vCol=diff>0?'#3A9BE8':'#e8526a'; }
+    else                    { verdict=diff>0?'IDは高照度好み':'JPは低照度好み'; vCol=diff>0?'#3A9BE8':'#e8526a'; }
+    return '<div class="di-row"><span class="di-icon">'+meta.icon+'</span>' +
+      '<div class="di-bars">' +
+        '<div class="di-bar-row"><span class="di-bar-label" style="color:#e8526a">JP</span>' +
+          '<div class="di-bar-track"><div style="position:absolute;top:0;bottom:0;left:'+pjl+'%;width:'+(pjh-pjl)+'%;background:#e8526a;opacity:.6"></div></div>' +
+          '<span class="di-bar-num" style="color:#e8526a">'+jl+'〜'+jh+meta.unit+'</span></div>' +
+        '<div class="di-bar-row"><span class="di-bar-label" style="color:#3A9BE8">ID</span>' +
+          '<div class="di-bar-track"><div style="position:absolute;top:0;bottom:0;left:'+pil+'%;width:'+(pih-pil)+'%;background:#3A9BE8;opacity:.6"></div></div>' +
+          '<span class="di-bar-num" style="color:#3A9BE8">'+il+'〜'+ih+meta.unit+'</span></div>' +
+      '</div>' +
+      '<div class="di-verdict" style="color:'+vCol+'">'+verdict+'<br><span style="font-size:8px;color:var(--text3)">差 '+absD+meta.unit+'</span></div>' +
+    '</div>';
+  }).join('');
+  el.innerHTML = '<div class="di-title">🔍 快適基準の差（日本 vs インドネシア）</div>' + rows;
+}
+
+// ════════════════════════════════════════════════════
+// 10. METRICS + COMPARE BAR
+// ════════════════════════════════════════════════════
+function avgFor(ctry, key) {
+  var vals = SCHOOLS.filter(function(s){ return s.country===ctry; })
+    .map(function(s){ return sensorData[s.id][key]; })
+    .filter(function(v){ return v!==null; });
+  return vals.length ? vals.reduce(function(a,b){return a+b;}) / vals.length : null;
+}
+
+function updateMetrics() {
+  var grid = document.getElementById('metrics-grid');
+  grid.innerHTML = SKEYS.map(function(key) {
+    var meta=SENSORS[key], jp=avgFor('JP',key), id=avgFor('ID',key);
+    var fmt=function(v){ return v===null?'—':(key==='light'?Math.round(v):v.toFixed(1)); };
+    return '<div class="metric-card">' +
+      '<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:13px">'+meta.icon+'</span>' +
+        '<span style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.05em">'+meta.label+'</span></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline">' +
+        '<div><div style="font-size:8px;color:#e8526a;font-weight:700">🇯🇵</div>' +
+          '<div style="font-family:\'DM Mono\',monospace;font-size:14px;color:#e8526a">'+fmt(jp)+'<span style="font-size:8px;color:var(--text3)">'+meta.unit+'</span></div></div>' +
+        '<div style="text-align:right"><div style="font-size:8px;color:#3A9BE8;font-weight:700">🇮🇩</div>' +
+          '<div style="font-family:\'DM Mono\',monospace;font-size:14px;color:#3A9BE8">'+fmt(id)+'<span style="font-size:8px;color:var(--text3)">'+meta.unit+'</span></div></div>' +
+      '</div></div>';
+  }).join('');
+}
+
+function updateCbar() {
+  var cIds = [['t','temp'],['h','humid'],['l','light'],['n','noise']];
+  cIds.forEach(function(ci) {
+    var key=ci[1], jp=avgFor('JP',key), id=avgFor('ID',key);
+    var fmt=function(v){ return v===null?'—':(key==='light'?Math.round(v):v.toFixed(1)); };
+    document.getElementById('c-'+ci[0]+'-jp').textContent = fmt(jp);
+    document.getElementById('c-'+ci[0]+'-id').textContent = fmt(id);
+    var el = document.getElementById('c-'+ci[0]+'-d');
+    if (jp!==null && id!==null) {
+      var diff = jp - id;
+      el.textContent = (diff>0?'+':'')+diff.toFixed(1);
+      el.className = 'cdiff ' + (diff>0 ? 'pos' : 'neg');
+    }
+  });
+  // Score comparison using current pov
+  var evalPov = pov==='ID' ? 'ID' : 'JP';
+  function avgScore(ctry) {
+    var sc = SCHOOLS.filter(function(s){ return s.country===ctry; })
+      .map(function(s){ return calcScore(s.id, evalPov); })
+      .filter(function(v){ return v!==null; });
+    return sc.length ? Math.round(sc.reduce(function(a,b){return a+b;}) / sc.length) : null;
+  }
+  var scJP=avgScore('JP'), scID=avgScore('ID');
+  document.getElementById('c-s-jp').textContent = scJP!==null?scJP:'—';
+  document.getElementById('c-s-id').textContent = scID!==null?scID:'—';
+  document.getElementById('c-pov-note').textContent = pov==='JP'?'(🇯🇵目線)':pov==='ID'?'(🇮🇩目線)':'(🌏両方)';
+  var sd = document.getElementById('c-s-d');
+  if (scJP!==null && scID!==null) {
+    var d2 = scJP-scID;
+    sd.textContent=(d2>0?'+':'')+d2;
+    sd.className='cdiff '+(d2>0?'pos':'neg');
+  }
+}
+
+var cbarVisible = false;
+function toggleCbar() {
+  cbarVisible = !cbarVisible;
+  document.getElementById('cbar').classList.toggle('hidden', !cbarVisible);
+  document.querySelector('.cbar-toggle').textContent = cbarVisible ? '比較パネル ▼' : '比較パネル ▲';
+}
+
+// ════════════════════════════════════════════════════
+// 11. DEMO
+// ════════════════════════════════════════════════════
+var DEMO = {
+  JP: { temp:[17,24], humid:[33,55], light:[280,680], noise:[36,53] },
+  ID: { temp:[27,35], humid:[60,88], light:[480,1100], noise:[46,70] }
+};
+var demoRunning=false, demoTimer=null;
+
+function rand(a,b) { return a + Math.random()*(b-a); }
+function nudge(v,a,b,s) { return parseFloat(Math.max(a,Math.min(b,v+(Math.random()-.5)*s)).toFixed(1)); }
+
+function startDemo() {
+  demoRunning = true;
+  SCHOOLS.forEach(function(s) {
+    var r = DEMO[s.country];
+    sensorData[s.id] = {
+      temp:  parseFloat(rand(r.temp[0],  r.temp[1]).toFixed(1)),
+      humid: parseFloat(rand(r.humid[0], r.humid[1]).toFixed(1)),
+      light: Math.round(rand(r.light[0], r.light[1])),
+      noise: parseFloat(rand(r.noise[0], r.noise[1]).toFixed(1))
+    };
+  });
+  refreshAll();
+  cbarVisible = true;
+  document.getElementById('cbar').classList.remove('hidden');
+  document.querySelector('.cbar-toggle').textContent = '比較パネル ▼';
+  document.getElementById('sdot').className = 'sdot demo';
+  document.getElementById('stext').textContent = 'デモモード — リアルタイム更新中';
+  document.getElementById('btn-demo').textContent = '⏹ デモ OFF';
+  document.getElementById('btn-demo').classList.add('on');
+  demoTimer = setInterval(function() {
+    SCHOOLS.forEach(function(s) {
+      var r=DEMO[s.country], d=sensorData[s.id];
+      sensorData[s.id] = {
+        temp:  nudge(d.temp,  r.temp[0],  r.temp[1],  0.4),
+        humid: nudge(d.humid, r.humid[0], r.humid[1], 1.2),
+        light: Math.round(nudge(d.light, r.light[0], r.light[1], 30)),
+        noise: nudge(d.noise, r.noise[0], r.noise[1], 1.0)
+      };
+    });
+    refreshAll();
+    document.getElementById('stime').textContent = new Date().toLocaleTimeString('ja-JP');
+  }, 2000);
+}
+
+function stopDemo() {
+  demoRunning = false;
+  clearInterval(demoTimer);
+  document.getElementById('btn-demo').textContent = '▶ デモ ON';
+  document.getElementById('btn-demo').classList.remove('on');
+  document.getElementById('sdot').className = 'sdot';
+  document.getElementById('stext').textContent = '停止中';
+}
+
+function toggleDemo() { demoRunning ? stopDemo() : startDemo(); }
+
+// ════════════════════════════════════════════════════
+// 12. REFRESH ALL
+// ════════════════════════════════════════════════════
+function refreshAll() {
+  SCHOOLS.forEach(function(s) {
+    markers[s.id].setIcon(makeIcon(s));
+    if (markers[s.id].isPopupOpen()) markers[s.id].setPopupContent(buildPopup(s));
+  });
+  renderCards();
+  updateMetrics();
+  updateCbar();
+}
+
+// ════════════════════════════════════════════════════
+// 13. WEB SERIAL
+// ════════════════════════════════════════════════════
+var serialPort=null, serialReader=null;
+
+async function connectSerial() {
+  if (!('serial' in navigator)) { document.getElementById('modal').classList.add('show'); return; }
+  try {
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({ baudRate:9600 });
+    stopDemo();
+    document.getElementById('btn-con').disabled = true;
+    document.getElementById('btn-dis').disabled = false;
+    document.getElementById('serial-opts').style.display = 'block';
+    document.getElementById('sdot').className = 'sdot live';
+    document.getElementById('stext').textContent = '接続中 — オレンジボード受信中';
+    readSerial();
+  } catch(e) { if (e.name !== 'NotSelectedError') alert('接続エラー: '+e.message); }
+}
+
+async function readSerial() {
+  var dec = new TextDecoderStream();
+  serialPort.readable.pipeTo(dec.writable);
+  var reader = dec.readable.getReader();
+  serialReader = reader;
+  var buf = '';
+  while (true) {
+    try {
+      var result = await reader.read();
+      if (result.done) break;
+      buf += result.value;
+      var lines = buf.split('\n'); buf = lines.pop();
+      lines.forEach(function(line) {
+        var v = parseFloat(line.trim());
+        if (!isNaN(v)) {
+          var id = document.getElementById('sel-school').value;
+          var key = document.getElementById('sel-sensor').value;
+          sensorData[id][key] = v;
+          refreshAll();
+          var school = SCHOOLS.find(function(s){ return s.id===id; });
+          document.getElementById('stext').textContent = '受信: '+(school?school.name:id)+' '+SENSORS[key].icon+v+SENSORS[key].unit;
+        }
+      });
+    } catch(e) { break; }
+  }
+}
+
+async function disconnectSerial() {
+  if (serialReader) { try { await serialReader.cancel(); } catch(e){} serialReader=null; }
+  if (serialPort)   { try { await serialPort.close();   } catch(e){} serialPort=null; }
+  document.getElementById('btn-con').disabled = false;
+  document.getElementById('btn-dis').disabled = true;
+  document.getElementById('serial-opts').style.display = 'none';
+  document.getElementById('sdot').className = 'sdot';
+  document.getElementById('stext').textContent = '切断しました';
+}
+
+// ════════════════════════════════════════════════════
+// 14. TAB SWITCH
+// ════════════════════════════════════════════════════
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'comfort') renderDiffInsight();
+}
+
+// ════════════════════════════════════════════════════
+// 15. SET POV (perspective switcher)
+// ════════════════════════════════════════════════════
+function setPov(p) {
+  pov = p;
+  var m = POV_META[p];
+  document.documentElement.style.setProperty('--pov-color', m.color);
+  document.documentElement.style.setProperty('--pov-bg', m.bg);
+  document.getElementById('pov-jp').className   = 'pov-btn' + (p==='JP'   ? ' on-jp'   : '');
+  document.getElementById('pov-both').className = 'pov-btn' + (p==='BOTH' ? ' on-both' : '');
+  document.getElementById('pov-id').className   = 'pov-btn' + (p==='ID'   ? ' on-id'   : '');
+  document.getElementById('pov-icon').textContent  = m.icon;
+  document.getElementById('pov-label').textContent = m.label;
+  document.getElementById('pov-desc').textContent  = m.desc;
+  var strip = document.getElementById('pov-strip');
+  strip.style.borderBottomColor = m.color;
+  strip.style.background = m.bg;
+  document.getElementById('cbar').style.borderTopColor = m.color;
+  var colJP = document.getElementById('pov-col-JP');
+  var colID = document.getElementById('pov-col-ID');
+  if (colJP) colJP.className = 'pov-col' + (p==='JP' ? ' hl-jp' : '');
+  if (colID) colID.className = 'pov-col' + (p==='ID' ? ' hl-id' : '');
+  renderLegend();
+  refreshAll();
+}
+
+// ════════════════════════════════════════════════════
+// 16. INIT — called last, after all functions defined
+// ════════════════════════════════════════════════════
+// Populate school select for serial
+var selSch = document.getElementById('sel-school');
+SCHOOLS.forEach(function(s) {
+  var o = document.createElement('option');
+  o.value = s.id;
+  o.textContent = (s.country==='JP' ? '🇯🇵 ' : '🇮🇩 ') + s.name;
+  selSch.appendChild(o);
+});
+
+setPov('JP');
+startDemo();
+</script>
+</body>
+</html>
