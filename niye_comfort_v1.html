@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>国立青少年教育施設 環境マッピングマップ</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#f0f4f8;--panel:#fff;--panel2:#f5f8fb;--border:#dde4ec;
+  --text:#1a2433;--text2:#4a6080;--text3:#8faabb;
+  --teal:#3AABA8;--cream:#F5E4C4;--orange:#E88A0A;--blue:#2E8EC4;
+  --shadow:0 4px 20px rgba(0,0,0,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Meiryo','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+header{height:52px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.07);z-index:1000;}
+.htitle{font-size:14px;font-weight:700;white-space:nowrap;}
+.sep{width:1px;height:22px;background:var(--border);flex-shrink:0;}
+
+.ctrl-strip{height:36px;background:var(--panel2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:8px;flex-shrink:0;}
+.cs-label{font-size:9px;color:var(--text3);font-weight:700;letter-spacing:.08em;}
+.cs-group{display:flex;gap:2px;}
+.cs-btn{padding:4px 10px;border:1.5px solid var(--border);border-radius:14px;background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--text3);transition:all .15s;}
+.cs-btn.active{background:var(--teal);color:#fff;border-color:var(--teal);box-shadow:0 2px 6px rgba(58,171,168,.3);}
+
+.sbar{height:26px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:12px;font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;flex-shrink:0;}
+.sdot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px;background:var(--orange);box-shadow:0 0 5px var(--orange);}
+
+.main{display:flex;flex:1;overflow:hidden;position:relative;}
+
+.sidebar-left{width:280px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:8px 10px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.metric-card{background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:6px 8px;}
+.fac-list{flex:1;overflow-y:auto;padding:6px 8px;}
+.fac-list::-webkit-scrollbar{width:3px;}
+.fac-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.group-hdr{font-size:9px;font-weight:700;padding:5px 4px 2px;text-transform:uppercase;letter-spacing:.1em;}
+.fcard{border-radius:8px;padding:7px 9px;margin-bottom:4px;cursor:pointer;border:1.5px solid var(--border);background:var(--panel);transition:all .16s;display:flex;align-items:center;gap:7px;}
+.fcard:hover{background:var(--panel2);transform:translateX(2px);}
+.fcard.sel{border-color:var(--teal);background:rgba(58,171,168,.08);}
+.fc-badge{font-size:8px;font-weight:700;color:#fff;padding:2px 5px;border-radius:4px;flex-shrink:0;}
+.fc-info{flex:1;min-width:0;}
+.fc-name{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fc-region{font-size:8px;color:var(--text3);}
+.fc-bars{display:flex;gap:2px;margin-top:3px;}
+.fc-bar-w{flex:1;}
+.fc-bar-lbl{font-size:7px;color:var(--text3);}
+.fc-bar-bg{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:1px;}
+.fc-bar-fill{height:100%;border-radius:2px;transition:width .5s,background .5s;}
+.ring-wrap{flex-shrink:0;}
+
+.sidebar-right{width:350px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
+.ds-tab-bar{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;}
+.ds-tab{flex:1;padding:7px 2px;border:none;background:transparent;font-size:10px;font-weight:700;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit;white-space:nowrap;}
+.ds-tab.active{color:var(--teal);border-bottom-color:var(--teal);background:rgba(58,171,168,.06);}
+.ds-panel{display:none;flex:1;overflow-y:auto;padding:10px 12px;}
+.ds-panel.active{display:block;}
+.ds-panel::-webkit-scrollbar{width:3px;}
+.ds-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.ds-section{margin-bottom:12px;}
+.ds-lbl{font-size:9px;font-weight:700;color:var(--text3);margin-bottom:4px;letter-spacing:.06em;}
+canvas{display:block;margin:6px 0;border:1px solid var(--border);border-radius:6px;background:#fff;}
+.ds-stats{background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:10px;color:var(--text2);line-height:1.8;font-family:'DM Mono',monospace;}
+select{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:10px;font-family:inherit;outline:none;cursor:pointer;}
+.btn{padding:7px 12px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-family:inherit;font-weight:700;transition:all .15s;}
+.btn-teal{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(58,171,168,.3);}
+.btn-teal:hover{background:#2a8a87;}
+
+.ts-checks{display:flex;flex-wrap:wrap;gap:3px;margin:6px 0;}
+.ts-cb{display:flex;align-items:center;gap:3px;font-size:9px;padding:2px 5px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:var(--panel);transition:all .1s;}
+.ts-cb input{width:10px;height:10px;margin:0;}
+.ts-type{font-size:7px;font-weight:700;color:#fff;padding:1px 3px;border-radius:2px;}
+.ts-filter{display:flex;gap:3px;margin-bottom:4px;}
+.ts-filter button{padding:3px 8px;border:1px solid var(--border);border-radius:4px;background:var(--panel2);font-size:9px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--text2);}
+.ts-filter button:hover{background:var(--teal);color:#fff;}
+
+.anom-item{background:rgba(229,90,78,.06);border:1px solid rgba(229,90,78,.2);border-radius:7px;padding:8px 10px;margin-bottom:5px;}
+.anom-fac{font-size:11px;font-weight:700;color:#e55a4e;}
+.anom-detail{font-size:10px;color:var(--text2);margin-top:3px;line-height:1.6;}
+
+#map{flex:1;}
+.leaflet-popup-content-wrapper{background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:0;overflow:hidden;}
+.leaflet-popup-tip{background:var(--panel)!important;}
+.leaflet-popup-content{margin:0!important;font-family:'Meiryo',sans-serif;}
+.pw{width:260px;}
+.ph{padding:10px 12px;border-bottom:1px solid var(--border);}
+.ph-name{font-size:12px;font-weight:700;}
+.ph-region{font-size:9px;color:var(--text3);margin-top:1px;}
+.ph-meta{display:flex;gap:8px;font-size:9px;color:var(--text3);margin-top:5px;}
+.pb{padding:8px 12px;}
+.pb-row{display:flex;align-items:center;gap:5px;margin-bottom:4px;}
+.pb-icon{font-size:12px;width:16px;}
+.pb-lbl{font-size:9px;color:var(--text3);width:28px;font-weight:700;}
+.pb-bar{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.pb-fill{height:100%;border-radius:2px;}
+.pb-val{font-family:'DM Mono',monospace;font-size:11px;width:40px;text-align:right;}
+.pb-unit{font-size:8px;color:var(--text3);width:24px;}
+
+.map-legend{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 10px;box-shadow:var(--shadow);min-width:130px;}
+.ml-title{font-size:10px;font-weight:700;margin-bottom:5px;}
+.ml-row{display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:10px;color:var(--text2);}
+.ml-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.ml-sep{height:1px;background:var(--border);margin:4px 0;}
+
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;}
+.modal-ov.show{display:flex;}
+.modal-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;width:280px;box-shadow:var(--shadow);}
+
+.ds-toggle{display:none;position:fixed;right:10px;bottom:10px;width:44px;height:44px;border-radius:50%;background:var(--teal);color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 3px 12px rgba(58,171,168,.4);z-index:600;}
+
+.serial-bar{background:rgba(58,171,168,.08);border-bottom:1px solid var(--teal);padding:6px 14px;display:flex;align-items:center;gap:10px;font-size:10px;flex-shrink:0;}
+
+.csv-info{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:10px;color:var(--text2);line-height:1.8;margin-bottom:10px;}
+
+@media(max-width:1100px){
+  .sidebar-right{display:none;position:fixed;right:0;top:0;bottom:0;z-index:800;box-shadow:-4px 0 20px rgba(0,0,0,.15);}
+  .sidebar-right.show{display:flex;}
+  .ds-toggle{display:block;}
+}
+@media(max-width:768px){
+  .sidebar-left{width:220px;}
+  .ctrl-strip{flex-wrap:wrap;height:auto;padding:6px 10px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="htitle">国立青少年教育施設 環境マッピングマップ</span>
+  <div class="sep"></div>
+  <span style="font-size:9px;color:var(--text3)">高校情報II データサイエンス授業用</span>
+  <button class="btn btn-teal" id="btn-serial" onclick="connectSerial()" style="margin-left:auto;padding:5px 12px;font-size:10px">🔌 シリアル接続</button>
+  <span style="font-size:10px;color:var(--text3)"><span class="sdot" id="sdot"></span><span id="stext">デモモード</span></span>
+</header>
+
+<div class="ctrl-strip">
+  <span class="cs-label">季節</span>
+  <div class="cs-group" id="season-btns">
+    <button class="cs-btn" onclick="setSeason(0)">🌸 春</button>
+    <button class="cs-btn active" onclick="setSeason(1)">☀️ 夏</button>
+    <button class="cs-btn" onclick="setSeason(2)">🍂 秋</button>
+    <button class="cs-btn" onclick="setSeason(3)">❄️ 冬</button>
+  </div>
+  <div class="sep"></div>
+  <span class="cs-label">時間帯</span>
+  <div class="cs-group" id="time-btns">
+    <button class="cs-btn" onclick="setTime(0)">🌅 朝</button>
+    <button class="cs-btn active" onclick="setTime(1)">☀️ 昼</button>
+    <button class="cs-btn" onclick="setTime(2)">🌇 夕</button>
+    <button class="cs-btn" onclick="setTime(3)">🌙 夜</button>
+  </div>
+  <span style="margin-left:auto;font-size:9px;color:var(--text3)" id="pattern-label">夏・昼</span>
+</div>
+
+<div class="sbar">
+  <span><span class="sdot"></span><span>デモモード稼働中 — 29施設</span></span>
+  <span id="stime" style="margin-left:auto;color:var(--text3)"></span>
+</div>
+
+<div class="serial-bar" id="serial-bar" style="display:none">
+  <span style="font-weight:700;color:var(--teal)">🔌 接続中</span>
+  <span>施設:</span><select id="sel-fac"></select>
+  <span>項目:</span>
+  <select id="sel-sensor">
+    <option value="temp">🌡 温度</option>
+    <option value="humid">💧 湿度</option>
+    <option value="light">💡 照度</option>
+    <option value="co2">🌿 CO2</option>
+  </select>
+  <button class="btn" onclick="disconnectSerial()" style="padding:3px 8px;font-size:9px;background:rgba(229,90,78,.1);color:#e55a4e;border:1px solid rgba(229,90,78,.25)">切断</button>
+</div>
+
+<div class="main">
+  <div class="sidebar-left">
+    <div class="metrics-grid" id="metrics-grid"></div>
+    <div class="fac-list" id="fac-list"></div>
+  </div>
+
+  <div id="map"></div>
+
+  <div class="sidebar-right" id="sidebar-right">
+    <div class="ds-tab-bar">
+      <button class="ds-tab active" onclick="switchDS('season',this)">🕐 季節</button>
+      <button class="ds-tab" onclick="switchDS('dist',this)">📊 分布</button>
+      <button class="ds-tab" onclick="switchDS('corr',this)">📈 相関</button>
+      <button class="ds-tab" onclick="switchDS('ts',this)">📉 時系列</button>
+      <button class="ds-tab" onclick="switchDS('anom',this)">⚠️ 異常</button>
+      <button class="ds-tab" onclick="switchDS('csv',this)">💾 CSV</button>
+    </div>
+
+    <div class="ds-panel active" id="ds-season">
+      <div class="ds-section">
+        <div class="ds-lbl">📋 現在のパターン</div>
+        <div id="season-info" style="font-size:11px;line-height:1.8"></div>
+      </div>
+      <div class="ds-section">
+        <div class="ds-lbl">📊 全施設の平均値</div>
+        <div id="season-avg" class="ds-stats"></div>
+      </div>
+      <div class="ds-section">
+        <div class="ds-lbl">💡 データサイエンスのヒント</div>
+        <div style="font-size:10px;color:var(--text2);line-height:1.7;background:rgba(58,171,168,.06);padding:8px 10px;border-radius:7px;border-left:3px solid var(--teal)">
+          季節や時間帯を変更すると、気温・湿度・照度・CO2の値が変化します。<br>
+          <strong>📈 相関タブ</strong>で「緯度×温度」を選ぶと、北の施設ほど気温が低い傾向が見えます。<br>
+          <strong>📊 分布タブ</strong>でヒストグラムと箱ひげ図を確認しましょう。<br>
+          <strong>📉 時系列タブ</strong>で施設ごとの一日の変化を比較できます。
+        </div>
+      </div>
+    </div>
+
+    <div class="ds-panel" id="ds-dist">
+      <div class="ds-section">
+        <div class="ds-lbl">項目を選択</div>
+        <select id="dist-sensor" onchange="renderDist()" style="width:100%">
+          <option value="temp">🌡 温度 (℃)</option>
+          <option value="humid">💧 湿度 (%)</option>
+          <option value="light">💡 照度 (lx)</option>
+          <option value="co2">🌿 CO2 (ppm)</option>
+        </select>
+      </div>
+      <div class="ds-section">
+        <div class="ds-lbl">ヒストグラム</div>
+        <canvas id="canvas-hist"></canvas>
+      </div>
+      <div class="ds-section">
+        <div class="ds-lbl">箱ひげ図</div>
+        <canvas id="canvas-box"></canvas>
+      </div>
+      <div class="ds-section">
+        <div class="ds-lbl">基本統計量</div>
+        <div id="dist-stats" class="ds-stats"></div>
+      </div>
+    </div>
+
+    <div class="ds-panel" id="ds-corr">
+      <div class="ds-section" style="display:flex;gap:8px">
+        <div style="flex:1">
+          <div class="ds-lbl">X軸</div>
+          <select id="corr-x" onchange="renderCorr()" style="width:100%">
+            <option value="lat">📍 緯度</option>
+            <option value="alt">⛰ 標高</option>
+            <option value="temp">🌡 温度</option>
+            <option value="humid">💧 湿度</option>
+            <option value="light">💡 照度</option>
+            <option value="co2">🌿 CO2</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <div class="ds-lbl">Y軸</div>
+          <select id="corr-y" onchange="renderCorr()" style="width:100%">
+            <option value="temp" selected>🌡 温度</option>
+            <option value="humid">💧 湿度</option>
+            <option value="light">💡 照度</option>
+            <option value="co2">🌿 CO2</option>
+            <option value="lat">📍 緯度</option>
+            <option value="alt">⛰ 標高</option>
+          </select>
+        </div>
+      </div>
+      <div class="ds-section">
+        <canvas id="canvas-scatter"></canvas>
+      </div>
+      <div class="ds-section">
+        <div id="corr-stats" class="ds-stats"></div>
+      </div>
+    </div>
+
+    <div class="ds-panel" id="ds-ts">
+      <div class="ds-section">
+        <div class="ds-lbl">項目を選択</div>
+        <select id="ts-sensor" onchange="renderTS()" style="width:100%">
+          <option value="temp">🌡 温度 (℃)</option>
+          <option value="humid">💧 湿度 (%)</option>
+          <option value="light">💡 照度 (lx)</option>
+          <option value="co2">🌿 CO2 (ppm)</option>
+        </select>
+      </div>
+      <div class="ds-section">
+        <div class="ds-lbl">施設を選択</div>
+        <div class="ts-filter">
+          <button onclick="tsSelect('交流')">交流の家</button>
+          <button onclick="tsSelect('自然')">自然の家</button>
+          <button onclick="tsSelect('all')">全て</button>
+          <button onclick="tsSelect('clear')">クリア</button>
+        </div>
+        <div class="ts-checks" id="ts-checks"></div>
+      </div>
+      <div class="ds-section">
+        <div class="ds-lbl">時間帯別推移（現在の季節）</div>
+        <canvas id="canvas-ts"></canvas>
+      </div>
+    </div>
+
+    <div class="ds-panel" id="ds-anom">
+      <div class="ds-section">
+        <div class="ds-lbl">⚠️ 異常値検知（平均±2σ）</div>
+        <div style="font-size:9px;color:var(--text3);margin-bottom:8px">各センサー項目で平均から2標準偏差以上離れた値を自動検出します</div>
+        <div id="anom-list"></div>
+      </div>
+    </div>
+
+    <div class="ds-panel" id="ds-csv">
+      <div class="ds-section">
+        <div class="ds-lbl">💾 CSVデータ出力</div>
+        <div class="csv-info">
+          <strong>出力内容：</strong><br>
+          施設名, 種別, 地域, 緯度, 経度, 標高,<br>
+          季節, 時間帯, 温度, 湿度, 照度, CO2<br><br>
+          <label><input type="checkbox" id="csv-all"> 全16パターン（季節×時間帯）を出力</label><br>
+          <span style="font-size:9px;color:var(--text3)">チェックなし＝現在のパターンのみ（29行）</span>
+        </div>
+        <button class="btn btn-teal" onclick="exportCSV()" style="width:100%">💾 CSVファイルをダウンロード</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="ds-toggle" id="ds-toggle" onclick="toggleDS()">📊</button>
+
+<div class="modal-ov" id="modal">
+  <div class="modal-box">
+    <h3 style="color:var(--orange);font-size:13px;margin-bottom:6px">⚠ Web Serial API 非対応</h3>
+    <p style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px">Chrome または Edge でお使いください。</p>
+    <button class="btn btn-teal" onclick="document.getElementById('modal').classList.remove('show')" style="width:100%">閉じる</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// 1. SENSORS & CONSTANTS
+// ════════════════════════════════════════
+var SENSORS = {
+  temp:  {icon:'\u{1F321}',label:'温度',unit:'℃',min:-5,max:40},
+  humid: {icon:'\u{1F4A7}',label:'湿度',unit:'%',min:20,max:100},
+  light: {icon:'\u{1F4A1}',label:'照度',unit:'lx',min:0,max:1500},
+  co2:   {icon:'\u{1F33F}',label:'CO2',unit:'ppm',min:300,max:1200}
+};
+var SKEYS = ['temp','humid','light','co2'];
+var COMFORT = {temp:[17,28],humid:[30,70],light:[300,750],co2:[350,1000]};
+var SEASON_NAMES = ['春','夏','秋','冬'];
+var TIME_NAMES = ['朝','昼','夕','夜'];
+var TYPE_COLORS = {'交流':'#E88A0A','自然':'#3AABA8','その他':'#2E8EC4'};
+var CHART_COLORS = ['#e8526a','#3AABA8','#E88A0A','#2E8EC4','#9b59b6','#27ae60','#e74c3c','#f39c12','#1abc9c','#3498db','#8e44ad','#2ecc71','#e67e22','#16a085','#2980b9','#c0392b','#d35400','#7f8c8d','#2c3e50','#95a5a6','#6c3483','#1a5276','#117a65','#b7950b','#922b21','#4a235a','#0e6655','#7e5109','#1b4f72'];
+
+// ════════════════════════════════════════
+// 2. FACILITIES (29)
+// ════════════════════════════════════════
+var FACILITIES = [
+  {id:'IW',type:'交流',name:'国立岩手山青少年交流の家',region:'岩手県 滝沢市',lat:39.80,lng:141.09,alt:280},
+  {id:'BD',type:'交流',name:'国立磐梯青少年交流の家',region:'福島県 猪苗代町',lat:37.56,lng:140.08,alt:770},
+  {id:'AK',type:'交流',name:'国立赤城青少年交流の家',region:'群馬県 前橋市',lat:36.53,lng:139.16,alt:1100},
+  {id:'NT',type:'交流',name:'国立能登青少年交流の家',region:'石川県 羽咋市',lat:36.95,lng:136.79,alt:30},
+  {id:'NR',type:'交流',name:'国立乗鞍青少年交流の家',region:'岐阜県 高山市',lat:36.12,lng:137.56,alt:1400},
+  {id:'CH',type:'交流',name:'国立中央青少年交流の家',region:'静岡県 御殿場市',lat:35.29,lng:138.94,alt:500},
+  {id:'AW',type:'交流',name:'国立淡路青少年交流の家',region:'兵庫県 南あわじ市',lat:34.29,lng:134.78,alt:100},
+  {id:'SB',type:'交流',name:'国立三瓶青少年交流の家',region:'島根県 大田市',lat:35.13,lng:132.63,alt:400},
+  {id:'ET',type:'交流',name:'国立江田島青少年交流の家',region:'広島県 江田島市',lat:34.22,lng:132.45,alt:30},
+  {id:'OS',type:'交流',name:'国立大洲青少年交流の家',region:'愛媛県 大洲市',lat:33.52,lng:132.54,alt:50},
+  {id:'AS',type:'交流',name:'国立阿蘇青少年交流の家',region:'熊本県 阿蘇市',lat:32.95,lng:131.08,alt:500},
+  {id:'ON',type:'交流',name:'国立沖縄青少年交流の家',region:'沖縄県 渡嘉敷村',lat:26.19,lng:127.36,alt:50},
+  {id:'NB',type:'交流',name:'国立中辺路青少年交流の家',region:'和歌山県 田辺市',lat:33.83,lng:135.55,alt:200},
+  {id:'HD',type:'自然',name:'国立日高青少年自然の家',region:'北海道 日高町',lat:42.48,lng:142.38,alt:200},
+  {id:'HN',type:'自然',name:'国立花山青少年自然の家',region:'宮城県 栗原市',lat:38.88,lng:140.75,alt:350},
+  {id:'NK',type:'自然',name:'国立那須甲子青少年自然の家',region:'福島県 西郷村',lat:37.18,lng:139.95,alt:900},
+  {id:'ST',type:'自然',name:'国立信州高遠青少年自然の家',region:'長野県 伊那市',lat:35.83,lng:138.07,alt:900},
+  {id:'MY',type:'自然',name:'国立妙高青少年自然の家',region:'新潟県 妙高市',lat:36.88,lng:138.23,alt:300},
+  {id:'TY',type:'自然',name:'国立立山青少年自然の家',region:'富山県 立山町',lat:36.58,lng:137.32,alt:500},
+  {id:'WK',type:'自然',name:'国立若狭湾青少年自然の家',region:'福井県 小浜市',lat:35.50,lng:135.75,alt:30},
+  {id:'SN',type:'自然',name:'国立曽爾青少年自然の家',region:'奈良県 曽爾村',lat:34.52,lng:136.17,alt:500},
+  {id:'KB',type:'自然',name:'国立吉備青少年自然の家',region:'岡山県 吉備中央町',lat:34.85,lng:133.77,alt:200},
+  {id:'YT',type:'自然',name:'国立山口徳地青少年自然の家',region:'山口県 山口市',lat:34.22,lng:131.70,alt:300},
+  {id:'MR',type:'自然',name:'国立室戸青少年自然の家',region:'高知県 室戸市',lat:33.28,lng:134.15,alt:30},
+  {id:'YS',type:'自然',name:'国立夜須高原青少年自然の家',region:'福岡県 筑前町',lat:33.48,lng:130.68,alt:200},
+  {id:'IS',type:'自然',name:'国立諫早青少年自然の家',region:'長崎県 諫早市',lat:32.85,lng:130.05,alt:30},
+  {id:'OM',type:'自然',name:'国立大隅青少年自然の家',region:'鹿児島県 鹿屋市',lat:31.38,lng:131.02,alt:60},
+  {id:'OC',type:'その他',name:'国立オリンピック記念青少年総合センター',region:'東京都 渋谷区',lat:35.67,lng:139.70,alt:35}
+];
+
+// ════════════════════════════════════════
+// 3. STATE
+// ════════════════════════════════════════
+var currentSeason = 1;
+var currentTime = 1;
+var sensorData = {};
+var allDemoData = {};
+var activeFacId = FACILITIES[0].id;
+var activeDS = 'season';
+
+// ════════════════════════════════════════
+// 4. DEMO DATA GENERATION
+// ════════════════════════════════════════
+function srand(a,b){var x=Math.sin(a*127.1+b*311.7)*43758.5453;return x-Math.floor(x);}
+
+function generateAllDemoData(){
+  var sOff=[{t:-5,h:0,lm:1.0,c:0},{t:0,h:15,lm:1.15,c:-30},{t:-4,h:5,lm:0.9,c:10},{t:-12,h:-10,lm:0.7,c:50}];
+  var tOff=[{t:-4,h:5,l:350,c:-80},{t:0,h:-5,l:650,c:80},{t:-2,h:0,l:250,c:20},{t:-6,h:8,l:100,c:-60}];
+  FACILITIES.forEach(function(f,fi){
+    allDemoData[f.id]=[];
+    for(var s=0;s<4;s++){
+      allDemoData[f.id][s]=[];
+      for(var t=0;t<4;t++){
+        var seed=fi*16+s*4+t;
+        var r1=srand(seed,1),r2=srand(seed,2),r3=srand(seed,3),r4=srand(seed,4);
+        var baseT=28-(f.lat-26)*0.45-f.alt*0.006;
+        var temp=baseT+sOff[s].t+tOff[t].t+(r1-0.5)*4;
+        var baseH=62+sOff[s].h+tOff[t].h+(f.alt<100?5:-f.alt*0.005);
+        var humid=baseH+(r2-0.5)*16;
+        var light=tOff[t].l*sOff[s].lm+(r3-0.5)*160;
+        var co2=480+tOff[t].c+sOff[s].c+(r4-0.5)*120;
+        allDemoData[f.id][s][t]={
+          temp:parseFloat(temp.toFixed(1)),
+          humid:parseFloat(Math.max(20,Math.min(98,humid)).toFixed(1)),
+          light:Math.max(20,Math.round(light)),
+          co2:Math.max(300,Math.round(co2))
+        };
+      }
+    }
+  });
+}
+
+function applySeasonTime(){
+  FACILITIES.forEach(function(f){sensorData[f.id]=allDemoData[f.id][currentSeason][currentTime];});
+}
+
+// ════════════════════════════════════════
+// 5. SCORING
+// ════════════════════════════════════════
+function calcSensorScore(v,key){
+  if(v===null)return null;
+  var lo=COMFORT[key][0],hi=COMFORT[key][1],mid=(lo+hi)/2,half=(hi-lo)/2;
+  return Math.round(Math.max(0,1-Math.abs(v-mid)/(half*2))*100);
+}
+function calcScore(id){
+  var d=sensorData[id];
+  var scores=SKEYS.map(function(k){return d[k]!==null?calcSensorScore(d[k],k):null;}).filter(function(v){return v!==null;});
+  return scores.length?Math.round(scores.reduce(function(a,b){return a+b;})/scores.length):null;
+}
+function scoreColor(s){
+  if(s===null)return'#b0c4d4';
+  if(s>=75)return'#3AABA8';if(s>=55)return'#5dc573';if(s>=35)return'#f0c040';return'#e55a4e';
+}
+
+// ════════════════════════════════════════
+// 6. MAP
+// ════════════════════════════════════════
+var map=L.map('map',{center:[36.5,137],zoom:5,zoomControl:true,attributionControl:false});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
+L.control.attribution({prefix:'© OpenStreetMap'}).addTo(map);
+
+var legendCtrl=L.control({position:'bottomright'});
+legendCtrl.onAdd=function(){
+  var d=L.DomUtil.create('div','map-legend');
+  d.innerHTML='<div class="ml-title">快適スコア</div>'+
+    '<div class="ml-row"><div class="ml-dot" style="background:#3AABA8"></div>75〜 快適</div>'+
+    '<div class="ml-row"><div class="ml-dot" style="background:#5dc573"></div>55〜75 良好</div>'+
+    '<div class="ml-row"><div class="ml-dot" style="background:#f0c040"></div>35〜55 普通</div>'+
+    '<div class="ml-row"><div class="ml-dot" style="background:#e55a4e"></div>〜35 不快</div>'+
+    '<div class="ml-sep"></div>'+
+    '<div class="ml-row"><div class="ml-dot" style="border:3px solid #E88A0A;background:#fff"></div>交流の家</div>'+
+    '<div class="ml-row"><div class="ml-dot" style="border:3px solid #3AABA8;background:#fff"></div>自然の家</div>'+
+    '<div class="ml-row"><div class="ml-dot" style="border:3px solid #2E8EC4;background:#fff"></div>その他</div>';
+  return d;
+};
+legendCtrl.addTo(map);
+
+// ════════════════════════════════════════
+// 7. MARKERS
+// ════════════════════════════════════════
+var markers={};
+
+function makeIcon(f){
+  var SZ=32,sc=calcScore(f.id),col=scoreColor(sc),border=TYPE_COLORS[f.type]||'#999';
+  var label=sc!==null?sc:'\u2014';
+  var html='<div style="width:'+SZ+'px;height:'+SZ+'px;border-radius:50%;background:'+col+';border:3px solid '+border+';box-shadow:0 2px 8px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)"><span style="font-size:10px;font-weight:700;color:#fff;font-family:DM Mono,monospace;text-shadow:0 1px 2px rgba(0,0,0,.3)">'+label+'</span></div>';
+  return L.divIcon({html:html,className:'',iconSize:[SZ,SZ],iconAnchor:[SZ/2,SZ/2]});
+}
+
+function buildPopup(f){
+  var d=sensorData[f.id],sc=calcScore(f.id);
+  var bars=SKEYS.map(function(key){
+    var meta=SENSORS[key],v=d[key];
+    var pct=v!==null?Math.min(100,Math.max(0,((v-meta.min)/(meta.max-meta.min))*100)):0;
+    var ss=calcSensorScore(v,key);
+    return'<div class="pb-row"><span class="pb-icon">'+meta.icon+'</span><span class="pb-lbl">'+meta.label+'</span>'+
+      '<div class="pb-bar"><div class="pb-fill" style="width:'+pct+'%;background:'+scoreColor(ss)+'"></div></div>'+
+      '<span class="pb-val">'+(v!==null?(key==='light'||key==='co2'?Math.round(v):v.toFixed(1)):'\u2014')+'</span>'+
+      '<span class="pb-unit">'+meta.unit+'</span></div>';
+  }).join('');
+  return'<div class="pw"><div class="ph">'+
+    '<div style="display:flex;align-items:center;gap:6px"><span class="fc-badge" style="background:'+TYPE_COLORS[f.type]+'">'+f.type+'</span>'+
+    '<div><div class="ph-name">'+f.name+'</div><div class="ph-region">'+f.region+'</div></div></div>'+
+    '<div class="ph-meta"><span>N'+f.lat.toFixed(2)+'</span><span>'+f.alt+'m</span><span style="color:'+scoreColor(sc)+';font-weight:700">'+
+    (sc!==null?sc:'\u2014')+'点</span></div></div><div class="pb">'+bars+'</div></div>';
+}
+
+FACILITIES.forEach(function(f){
+  var m=L.marker([f.lat,f.lng],{icon:makeIcon(f)}).addTo(map);
+  m.bindPopup(buildPopup(f),{maxWidth:280});
+  m.on('click',function(){selectFac(f.id);});
+  markers[f.id]=m;
+});
+
+// ════════════════════════════════════════
+// 8. FACILITY CARDS
+// ════════════════════════════════════════
+function shortName(n){return n.replace(/^国立/,'').replace(/青少年.+$/,'');}
+
+function renderCards(){
+  var el=document.getElementById('fac-list');el.innerHTML='';
+  [['交流','🏠 交流の家','#E88A0A'],['自然','🌲 自然の家','#3AABA8'],['その他','🏛 その他','#2E8EC4']].forEach(function(g){
+    var type=g[0],lbl=g[1],col=g[2];
+    var facs=FACILITIES.filter(function(f){return f.type===type;});
+    if(!facs.length)return;
+    var hdr=document.createElement('div');hdr.className='group-hdr';hdr.style.color=col;hdr.textContent=lbl+' ('+facs.length+')';
+    el.appendChild(hdr);
+    facs.forEach(function(f){
+      var d=sensorData[f.id],sc=calcScore(f.id),scCol=scoreColor(sc);
+      var card=document.createElement('div');
+      card.className='fcard'+(f.id===activeFacId?' sel':'');card.id='card-'+f.id;
+      var bars=SKEYS.map(function(key){
+        var meta=SENSORS[key],v=d[key];
+        var pct=v!==null?Math.min(100,Math.max(0,((v-meta.min)/(meta.max-meta.min))*100)):0;
+        var ss=calcSensorScore(v,key);
+        return'<div class="fc-bar-w"><div class="fc-bar-lbl">'+meta.icon+' '+meta.label+'</div>'+
+          '<div class="fc-bar-bg"><div class="fc-bar-fill" style="width:'+pct+'%;background:'+scoreColor(ss)+'"></div></div></div>';
+      }).join('');
+      card.innerHTML='<span class="fc-badge" style="background:'+col+'">'+type+'</span>'+
+        '<div class="fc-info"><div class="fc-name">'+shortName(f.name)+'</div><div class="fc-region">'+f.region+'</div>'+
+        '<div class="fc-bars">'+bars+'</div></div>'+makeRing(sc,scCol);
+      card.onclick=function(){selectFac(f.id);map.flyTo([f.lat,f.lng],8,{duration:1});markers[f.id].openPopup();};
+      el.appendChild(card);
+    });
+  });
+}
+
+function makeRing(sc,col){
+  var r=14,circ=2*Math.PI*r,dash=((sc||0)/100)*circ;
+  return'<div class="ring-wrap"><svg width="36" height="36" viewBox="0 0 36 36">'+
+    '<circle cx="18" cy="18" r="'+r+'" fill="none" stroke="#e8edf2" stroke-width="3"/>'+
+    '<circle cx="18" cy="18" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="3" stroke-dasharray="'+dash+' '+(circ-dash)+'" stroke-dashoffset="'+(circ/4)+'" stroke-linecap="round"/>'+
+    '<text x="18" y="18" text-anchor="middle" dominant-baseline="middle" font-size="9" font-weight="600" fill="'+col+'" font-family="DM Mono,monospace">'+(sc!==null?sc:'\u2014')+'</text></svg></div>';
+}
+
+function selectFac(id){
+  activeFacId=id;
+  document.querySelectorAll('.fcard').forEach(function(c){c.classList.remove('sel');});
+  var card=document.getElementById('card-'+id);
+  if(card){card.classList.add('sel');card.scrollIntoView({behavior:'smooth',block:'nearest'});}
+}
+
+// ════════════════════════════════════════
+// 9. METRICS
+// ════════════════════════════════════════
+function updateMetrics(){
+  var grid=document.getElementById('metrics-grid');
+  grid.innerHTML=SKEYS.map(function(key){
+    var meta=SENSORS[key];
+    function avg(type){
+      var vals=FACILITIES.filter(function(f){return f.type===type;}).map(function(f){return sensorData[f.id][key];}).filter(function(v){return v!==null;});
+      return vals.length?vals.reduce(function(a,b){return a+b;})/vals.length:null;
+    }
+    var a1=avg('交流'),a2=avg('自然');
+    var fmt=function(v){return v===null?'\u2014':(key==='light'||key==='co2'?Math.round(v):v.toFixed(1));};
+    return'<div class="metric-card"><div style="display:flex;align-items:center;gap:3px;margin-bottom:3px"><span style="font-size:12px">'+meta.icon+'</span>'+
+      '<span style="font-size:8px;color:var(--text3);font-weight:700">'+meta.label+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between"><div><div style="font-size:7px;color:#E88A0A;font-weight:700">交流</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:12px;color:#E88A0A">'+fmt(a1)+'<span style="font-size:7px;color:var(--text3)">'+meta.unit+'</span></div></div>'+
+      '<div style="text-align:right"><div style="font-size:7px;color:#3AABA8;font-weight:700">自然</div>'+
+      '<div style="font-family:DM Mono,monospace;font-size:12px;color:#3AABA8">'+fmt(a2)+'<span style="font-size:7px;color:var(--text3)">'+meta.unit+'</span></div></div></div></div>';
+  }).join('');
+}
+
+// ════════════════════════════════════════
+// 10. SEASON / TIME CONTROLS
+// ════════════════════════════════════════
+function setSeason(s){
+  currentSeason=s;
+  var btns=document.getElementById('season-btns').children;
+  for(var i=0;i<btns.length;i++)btns[i].className='cs-btn'+(i===s?' active':'');
+  applySeasonTime();refreshAll();
+  document.getElementById('pattern-label').textContent=SEASON_NAMES[currentSeason]+'\u30FB'+TIME_NAMES[currentTime];
+}
+function setTime(t){
+  currentTime=t;
+  var btns=document.getElementById('time-btns').children;
+  for(var i=0;i<btns.length;i++)btns[i].className='cs-btn'+(i===t?' active':'');
+  applySeasonTime();refreshAll();
+  document.getElementById('pattern-label').textContent=SEASON_NAMES[currentSeason]+'\u30FB'+TIME_NAMES[currentTime];
+}
+
+// ════════════════════════════════════════
+// 11. CANVAS HELPER
+// ════════════════════════════════════════
+function getCtx(id,h){
+  var c=document.getElementById(id);if(!c)return null;
+  var dpr=window.devicePixelRatio||1;
+  var par=c.parentElement;
+  var w=par?par.clientWidth-4:300;
+  if(w<100)w=300;
+  c.style.width=w+'px';c.style.height=h+'px';
+  c.width=w*dpr;c.height=h*dpr;
+  var ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  ctx._w=w;ctx._h=h;return ctx;
+}
+
+// ════════════════════════════════════════
+// 12. HISTOGRAM
+// ════════════════════════════════════════
+function drawHistogram(canvasId,values,sensorKey){
+  var ctx=getCtx(canvasId,180);if(!ctx)return;
+  var W=ctx._w,H=ctx._h,meta=SENSORS[sensorKey];
+  var pad={top:28,right:15,bottom:35,left:40};
+  var pW=W-pad.left-pad.right,pH=H-pad.top-pad.bottom;
+  ctx.clearRect(0,0,W,H);
+  var mn=Math.min.apply(null,values),mx=Math.max.apply(null,values);
+  if(mn===mx){mn-=1;mx+=1;}
+  var nB=8,bW=(mx-mn)/nB;
+  var bins=[];for(var i=0;i<nB;i++)bins[i]=0;
+  values.forEach(function(v){var idx=Math.min(nB-1,Math.floor((v-mn)/bW));bins[idx]++;});
+  var mxC=Math.max.apply(null,bins);if(mxC===0)mxC=1;
+  ctx.strokeStyle='#e8edf2';ctx.lineWidth=1;
+  for(var i=0;i<=4;i++){var y=pad.top+pH*(1-i/4);ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+pW,y);ctx.stroke();}
+  var barW=pW/nB;
+  ctx.fillStyle='rgba(58,171,168,0.5)';ctx.strokeStyle='#3AABA8';ctx.lineWidth=1;
+  bins.forEach(function(cnt,i){var bH=(cnt/mxC)*pH;var x=pad.left+i*barW;var y=pad.top+pH-bH;ctx.fillRect(x+1,y,barW-2,bH);ctx.strokeRect(x+1,y,barW-2,bH);});
+  ctx.fillStyle='#4a6080';ctx.font='9px DM Mono,monospace';ctx.textAlign='center';
+  var isInt=(sensorKey==='light'||sensorKey==='co2');
+  for(var i=0;i<=nB;i++){var v=mn+i*bW;ctx.fillText(isInt?Math.round(v):v.toFixed(1),pad.left+i*barW,H-pad.bottom+13);}
+  ctx.textAlign='right';
+  for(var i=0;i<=4;i++){ctx.fillText(Math.round(mxC*i/4),pad.left-4,pad.top+pH*(1-i/4)+3);}
+  ctx.fillStyle='#1a2433';ctx.font='bold 11px Meiryo';ctx.textAlign='center';
+  ctx.fillText(meta.icon+' '+meta.label+' ('+meta.unit+') の分布',W/2,16);
+}
+
+// ════════════════════════════════════════
+// 13. BOX PLOT
+// ════════════════════════════════════════
+function drawBoxPlot(canvasId,values){
+  var ctx=getCtx(canvasId,70);if(!ctx)return;
+  var W=ctx._w,H=ctx._h;
+  var pad={top:18,right:15,bottom:18,left:40};
+  var pW=W-pad.left-pad.right;
+  ctx.clearRect(0,0,W,H);
+  var sorted=values.slice().sort(function(a,b){return a-b;});
+  var n=sorted.length;
+  var q1=sorted[Math.floor(n*0.25)],med=sorted[Math.floor(n*0.5)],q3=sorted[Math.floor(n*0.75)];
+  var mn=sorted[0],mx=sorted[n-1];
+  var range=mx-mn;if(range===0)range=2;
+  var dMn=mn-range*0.05,dMx=mx+range*0.05,dR=dMx-dMn;
+  function xP(v){return pad.left+((v-dMn)/dR)*pW;}
+  var cy=H/2;
+  ctx.strokeStyle='#4a6080';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(xP(mn),cy);ctx.lineTo(xP(q1),cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(xP(q3),cy);ctx.lineTo(xP(mx),cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(xP(mn),cy-6);ctx.lineTo(xP(mn),cy+6);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(xP(mx),cy-6);ctx.lineTo(xP(mx),cy+6);ctx.stroke();
+  ctx.fillStyle='rgba(58,171,168,0.2)';ctx.strokeStyle='#3AABA8';ctx.lineWidth=1.5;
+  ctx.fillRect(xP(q1),cy-10,xP(q3)-xP(q1),20);ctx.strokeRect(xP(q1),cy-10,xP(q3)-xP(q1),20);
+  ctx.strokeStyle='#e8526a';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(xP(med),cy-10);ctx.lineTo(xP(med),cy+10);ctx.stroke();
+  ctx.fillStyle='#4a6080';ctx.font='8px DM Mono,monospace';ctx.textAlign='center';
+  ctx.fillText('Q1:'+q1.toFixed(1),xP(q1),H-2);
+  ctx.fillText('Med:'+med.toFixed(1),xP(med),pad.top-3);
+  ctx.fillText('Q3:'+q3.toFixed(1),xP(q3),H-2);
+}
+
+// ════════════════════════════════════════
+// 14. SCATTER PLOT
+// ════════════════════════════════════════
+function drawScatter(canvasId,xVals,yVals,xKey,yKey,types){
+  var ctx=getCtx(canvasId,240);if(!ctx)return null;
+  var W=ctx._w,H=ctx._h;
+  var pad={top:25,right:15,bottom:35,left:45};
+  var pW=W-pad.left-pad.right,pH=H-pad.top-pad.bottom;
+  ctx.clearRect(0,0,W,H);
+  var xMn=Math.min.apply(null,xVals),xMx=Math.max.apply(null,xVals);
+  var yMn=Math.min.apply(null,yVals),yMx=Math.max.apply(null,yVals);
+  var xR=xMx-xMn||1,yR=yMx-yMn||1;
+  xMn-=xR*0.08;xMx+=xR*0.08;yMn-=yR*0.08;yMx+=yR*0.08;xR=xMx-xMn;yR=yMx-yMn;
+  function xP(v){return pad.left+((v-xMn)/xR)*pW;}
+  function yP(v){return pad.top+pH-((v-yMn)/yR)*pH;}
+  ctx.strokeStyle='#e8edf2';ctx.lineWidth=1;
+  for(var i=0;i<=5;i++){
+    var y=pad.top+pH*i/5;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+pW,y);ctx.stroke();
+    var x=pad.left+pW*i/5;ctx.beginPath();ctx.moveTo(x,pad.top);ctx.lineTo(x,pad.top+pH);ctx.stroke();
+  }
+  var n=xVals.length,sumX=0,sumY=0,sumXY=0,sumX2=0,sumY2=0;
+  for(var i=0;i<n;i++){sumX+=xVals[i];sumY+=yVals[i];sumXY+=xVals[i]*yVals[i];sumX2+=xVals[i]*xVals[i];sumY2+=yVals[i]*yVals[i];}
+  var denR=(n*sumX2-sumX*sumX)*(n*sumY2-sumY*sumY);
+  var slope=(n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX||1);
+  var intercept=(sumY-slope*sumX)/n;
+  var r=denR>0?(n*sumXY-sumX*sumY)/Math.sqrt(denR):0;
+  ctx.strokeStyle='rgba(232,82,106,0.5)';ctx.lineWidth=2;ctx.setLineDash([5,3]);
+  var ry1=slope*xMn+intercept,ry2=slope*xMx+intercept;
+  ctx.beginPath();ctx.moveTo(xP(xMn),yP(ry1));ctx.lineTo(xP(xMx),yP(ry2));ctx.stroke();ctx.setLineDash([]);
+  for(var i=0;i<n;i++){
+    ctx.fillStyle=TYPE_COLORS[types[i]]||'#999';
+    ctx.beginPath();ctx.arc(xP(xVals[i]),yP(yVals[i]),4,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
+  }
+  ctx.fillStyle='#4a6080';ctx.font='9px Meiryo';ctx.textAlign='center';
+  ctx.fillText(getAxisLabel(xKey),pad.left+pW/2,H-4);
+  ctx.save();ctx.translate(10,pad.top+pH/2);ctx.rotate(-Math.PI/2);ctx.fillText(getAxisLabel(yKey),0,0);ctx.restore();
+  ctx.font='8px DM Mono,monospace';
+  for(var i=0;i<=5;i++){
+    ctx.textAlign='center';ctx.fillText((xMn+xR*i/5).toFixed(1),pad.left+pW*i/5,H-pad.bottom+12);
+    ctx.textAlign='right';ctx.fillText((yMn+yR*(5-i)/5).toFixed(1),pad.left-3,pad.top+pH*i/5+3);
+  }
+  ctx.fillStyle='#1a2433';ctx.font='bold 10px Meiryo';ctx.textAlign='left';
+  ctx.fillText('r = '+r.toFixed(3),pad.left+5,pad.top+14);
+  return{slope:slope,intercept:intercept,r:r};
+}
+
+function getAxisLabel(key){
+  if(key==='lat')return'\u7DEF\u5EA6 (\u00B0N)';if(key==='alt')return'\u6A19\u9AD8 (m)';
+  var m=SENSORS[key];return m?m.label+' ('+m.unit+')':key;
+}
+function getAxisValue(f,key){
+  if(key==='lat')return f.lat;if(key==='alt')return f.alt;return sensorData[f.id][key];
+}
+
+// ════════════════════════════════════════
+// 15. TIME SERIES
+// ════════════════════════════════════════
+function drawTimeSeries(canvasId,datasets,sensorKey){
+  var ctx=getCtx(canvasId,220);if(!ctx)return;
+  var W=ctx._w,H=ctx._h;
+  var pad={top:20,right:15,bottom:35,left:45};
+  var pW=W-pad.left-pad.right,pH=H-pad.top-pad.bottom;
+  ctx.clearRect(0,0,W,H);
+  if(!datasets.length){ctx.fillStyle='#8faabb';ctx.font='11px Meiryo';ctx.textAlign='center';ctx.fillText('\u2191 \u65BD\u8A2D\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044',W/2,H/2);return;}
+  var allVals=[];datasets.forEach(function(ds){ds.values.forEach(function(v){if(v!==null)allVals.push(v);});});
+  if(!allVals.length)return;
+  var yMn=Math.min.apply(null,allVals),yMx=Math.max.apply(null,allVals);
+  var yR=yMx-yMn||1;yMn-=yR*0.08;yMx+=yR*0.08;yR=yMx-yMn;
+  function yP(v){return pad.top+pH-((v-yMn)/yR)*pH;}
+  var xStep=pW/3;
+  ctx.strokeStyle='#e8edf2';ctx.lineWidth=1;
+  for(var i=0;i<4;i++){var x=pad.left+i*xStep;ctx.beginPath();ctx.moveTo(x,pad.top);ctx.lineTo(x,pad.top+pH);ctx.stroke();}
+  for(var i=0;i<=4;i++){var y=pad.top+pH*i/4;ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+pW,y);ctx.stroke();}
+  datasets.forEach(function(ds,di){
+    ctx.strokeStyle=CHART_COLORS[di%CHART_COLORS.length];ctx.lineWidth=2;ctx.beginPath();
+    ds.values.forEach(function(v,i){var x=pad.left+i*xStep,y=yP(v);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});
+    ctx.stroke();
+    ctx.fillStyle=CHART_COLORS[di%CHART_COLORS.length];
+    ds.values.forEach(function(v,i){ctx.beginPath();ctx.arc(pad.left+i*xStep,yP(v),3,0,Math.PI*2);ctx.fill();});
+  });
+  ctx.fillStyle='#4a6080';ctx.font='10px Meiryo';ctx.textAlign='center';
+  ['\uD83C\uDF05 \u671D','\u2600\uFE0F \u663C','\uD83C\uDF07 \u5915','\uD83C\uDF19 \u591C'].forEach(function(lbl,i){ctx.fillText(lbl,pad.left+i*xStep,H-pad.bottom+15);});
+  ctx.font='8px DM Mono,monospace';ctx.textAlign='right';
+  for(var i=0;i<=4;i++){ctx.fillText((yMn+yR*(4-i)/4).toFixed(1),pad.left-3,pad.top+pH*i/4+3);}
+  if(datasets.length<=12){
+    ctx.font='8px Meiryo';ctx.textAlign='left';
+    datasets.forEach(function(ds,di){
+      var lx=pad.left+5,ly=pad.top+10+di*11;
+      ctx.fillStyle=CHART_COLORS[di%CHART_COLORS.length];ctx.fillRect(lx,ly-5,8,8);
+      ctx.fillStyle='#4a6080';ctx.fillText(ds.label,lx+11,ly+2);
+    });
+  }
+}
+
+// ════════════════════════════════════════
+// 16. RENDER DS PANELS
+// ════════════════════════════════════════
+function renderSeasonInfo(){
+  var el=document.getElementById('season-info');if(!el)return;
+  var allAvg={};
+  SKEYS.forEach(function(key){
+    var vals=FACILITIES.map(function(f){return sensorData[f.id][key];}).filter(function(v){return v!==null;});
+    allAvg[key]=vals.length?vals.reduce(function(a,b){return a+b;})/vals.length:null;
+  });
+  el.innerHTML='<strong>'+SEASON_NAMES[currentSeason]+'\u30FB'+TIME_NAMES[currentTime]+'</strong>\u306E\u30C7\u30FC\u30BF\uFF08'+FACILITIES.length+'\u65BD\u8A2D\uFF09';
+  var avgEl=document.getElementById('season-avg');
+  if(avgEl){
+    avgEl.innerHTML=SKEYS.map(function(key){
+      var meta=SENSORS[key],v=allAvg[key];
+      return meta.icon+' '+meta.label+'\uFF1A'+(v!==null?(key==='light'||key==='co2'?Math.round(v):v.toFixed(1))+meta.unit:'\u2014');
+    }).join('<br>');
+  }
+}
+
+function renderDist(){
+  var key=document.getElementById('dist-sensor').value;
+  var values=FACILITIES.map(function(f){return sensorData[f.id][key];}).filter(function(v){return v!==null;});
+  if(!values.length)return;
+  drawHistogram('canvas-hist',values,key);
+  drawBoxPlot('canvas-box',values);
+  var sorted=values.slice().sort(function(a,b){return a-b;});
+  var n=sorted.length,sum=values.reduce(function(a,b){return a+b;},0);
+  var mean=sum/n,variance=values.reduce(function(a,b){return a+(b-mean)*(b-mean);},0)/n;
+  var std=Math.sqrt(variance),med=sorted[Math.floor(n/2)];
+  var meta=SENSORS[key];
+  document.getElementById('dist-stats').innerHTML=
+    'n = '+n+'<br>'+
+    '\u5E73\u5747 = '+mean.toFixed(2)+' '+meta.unit+'<br>'+
+    '\u4E2D\u592E\u5024 = '+med.toFixed(2)+' '+meta.unit+'<br>'+
+    '\u6A19\u6E96\u504F\u5DEE = '+std.toFixed(2)+' '+meta.unit+'<br>'+
+    '\u6700\u5C0F = '+sorted[0].toFixed(1)+' '+meta.unit+'<br>'+
+    '\u6700\u5927 = '+sorted[n-1].toFixed(1)+' '+meta.unit;
+}
+
+function renderCorr(){
+  var xKey=document.getElementById('corr-x').value,yKey=document.getElementById('corr-y').value;
+  var xVals=[],yVals=[],types=[];
+  FACILITIES.forEach(function(f){
+    var xv=getAxisValue(f,xKey),yv=getAxisValue(f,yKey);
+    if(xv!==null&&yv!==null){xVals.push(xv);yVals.push(yv);types.push(f.type);}
+  });
+  if(!xVals.length)return;
+  var res=drawScatter('canvas-scatter',xVals,yVals,xKey,yKey,types);
+  if(!res)return;
+  var xlbl=getAxisLabel(xKey),ylbl=getAxisLabel(yKey);
+  var strength=Math.abs(res.r)>=0.7?'<strong style="color:#3AABA8">\u5F37\u3044\u76F8\u95A2</strong>':Math.abs(res.r)>=0.4?'<strong style="color:#f0c040">\u4E2D\u7A0B\u5EA6\u306E\u76F8\u95A2</strong>':'<strong style="color:#e55a4e">\u5F31\u3044\u76F8\u95A2</strong>';
+  document.getElementById('corr-stats').innerHTML=
+    '\u76F8\u95A2\u4FC2\u6570 r = '+res.r.toFixed(4)+'<br>'+
+    '\u56DE\u5E30\u5F0F: y = '+res.slope.toFixed(3)+' x + '+res.intercept.toFixed(2)+'<br>'+
+    '\u5224\u5B9A: '+strength;
+}
+
+function renderTS(){
+  var key=document.getElementById('ts-sensor').value;
+  var checks=document.querySelectorAll('#ts-checks input[type=checkbox]:checked');
+  var datasets=[];
+  for(var i=0;i<checks.length;i++){
+    var fid=checks[i].value;
+    var f=null;
+    for(var j=0;j<FACILITIES.length;j++){if(FACILITIES[j].id===fid){f=FACILITIES[j];break;}}
+    if(!f)continue;
+    var vals=[0,1,2,3].map(function(t){return allDemoData[fid][currentSeason][t][key];});
+    datasets.push({id:fid,label:shortName(f.name),values:vals});
+  }
+  drawTimeSeries('canvas-ts',datasets,key);
+}
+
+function renderAnom(){
+  var el=document.getElementById('anom-list');if(!el)return;
+  var anomalies=[];
+  SKEYS.forEach(function(key){
+    var vals=FACILITIES.map(function(f){return sensorData[f.id][key];}).filter(function(v){return v!==null;});
+    if(!vals.length)return;
+    var mean=vals.reduce(function(a,b){return a+b;},0)/vals.length;
+    var std=Math.sqrt(vals.reduce(function(a,b){return a+(b-mean)*(b-mean);},0)/vals.length);
+    if(std===0)return;
+    FACILITIES.forEach(function(f){
+      var v=sensorData[f.id][key];if(v===null)return;
+      var z=(v-mean)/std;
+      if(Math.abs(z)>2)anomalies.push({f:f,key:key,v:v,mean:mean,std:std,z:z});
+    });
+  });
+  if(!anomalies.length){el.innerHTML='<div style="font-size:11px;color:var(--teal);padding:12px;text-align:center">\u2705 \u7570\u5E38\u5024\u306F\u691C\u51FA\u3055\u308C\u307E\u305B\u3093\u3067\u3057\u305F</div>';return;}
+  el.innerHTML=anomalies.map(function(a){
+    var meta=SENSORS[a.key],dir=a.z>0?'\u2B06 \u5E73\u5747\u3088\u308A\u9AD8\u3044':'\u2B07 \u5E73\u5747\u3088\u308A\u4F4E\u3044';
+    return'<div class="anom-item"><div class="anom-fac">\u26A0 '+shortName(a.f.name)+'</div>'+
+      '<div class="anom-detail">'+meta.icon+' '+meta.label+': <strong>'+(a.key==='light'||a.key==='co2'?Math.round(a.v):a.v.toFixed(1))+meta.unit+'</strong><br>'+
+      '\u5E73\u5747: '+a.mean.toFixed(1)+meta.unit+' / \u03C3: '+a.std.toFixed(1)+' / z = '+a.z.toFixed(2)+'<br>'+
+      '<span style="color:#e55a4e">'+dir+'</span></div></div>';
+  }).join('');
+}
+
+// ════════════════════════════════════════
+// 17. CSV EXPORT
+// ════════════════════════════════════════
+function exportCSV(){
+  var all=document.getElementById('csv-all').checked;
+  var rows=[['\u65BD\u8A2D\u540D','\u7A2E\u5225','\u5730\u57DF','\u7DEF\u5EA6','\u7D4C\u5EA6','\u6A19\u9AD8(m)','\u5B63\u7BC0','\u6642\u9593\u5E2F','\u6E29\u5EA6(\u2103)','\u6E7F\u5EA6(%)','\u7167\u5EA6(lx)','CO2(ppm)']];
+  if(all){
+    FACILITIES.forEach(function(f){
+      for(var s=0;s<4;s++)for(var t=0;t<4;t++){
+        var d=allDemoData[f.id][s][t];
+        rows.push([f.name,f.type,f.region,f.lat,f.lng,f.alt,SEASON_NAMES[s],TIME_NAMES[t],d.temp,d.humid,d.light,d.co2]);
+      }
+    });
+  }else{
+    FACILITIES.forEach(function(f){
+      var d=sensorData[f.id];
+      rows.push([f.name,f.type,f.region,f.lat,f.lng,f.alt,SEASON_NAMES[currentSeason],TIME_NAMES[currentTime],d.temp,d.humid,d.light,d.co2]);
+    });
+  }
+  var csv=rows.map(function(r){return r.join(',');}).join('\n');
+  var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='niye_data_'+SEASON_NAMES[currentSeason]+TIME_NAMES[currentTime]+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();URL.revokeObjectURL(a.href);
+}
+
+// ════════════════════════════════════════
+// 18. TAB SWITCHING
+// ════════════════════════════════════════
+function switchDS(id,btn){
+  activeDS=id;
+  document.querySelectorAll('.ds-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.ds-tab').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('ds-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  setTimeout(function(){refreshActiveDS();},50);
+}
+
+function refreshActiveDS(){
+  if(activeDS==='season')renderSeasonInfo();
+  else if(activeDS==='dist')renderDist();
+  else if(activeDS==='corr')renderCorr();
+  else if(activeDS==='ts')renderTS();
+  else if(activeDS==='anom')renderAnom();
+}
+
+function toggleDS(){document.getElementById('sidebar-right').classList.toggle('show');}
+
+// ════════════════════════════════════════
+// 19. TS CHECKBOXES
+// ════════════════════════════════════════
+function buildTSChecks(){
+  var el=document.getElementById('ts-checks');
+  var defaultOn=['HD','CH','ON','OM'];
+  el.innerHTML=FACILITIES.map(function(f){
+    var chk=defaultOn.indexOf(f.id)>=0?' checked':'';
+    return'<label class="ts-cb"><input type="checkbox" value="'+f.id+'"'+chk+' onchange="renderTS()">'+
+      '<span class="ts-type" style="background:'+TYPE_COLORS[f.type]+'">'+f.type.charAt(0)+'</span> '+shortName(f.name)+'</label>';
+  }).join('');
+}
+
+function tsSelect(mode){
+  var checks=document.querySelectorAll('#ts-checks input[type=checkbox]');
+  for(var i=0;i<checks.length;i++){
+    if(mode==='clear')checks[i].checked=false;
+    else if(mode==='all')checks[i].checked=true;
+    else{
+      var f=null;
+      for(var j=0;j<FACILITIES.length;j++){if(FACILITIES[j].id===checks[i].value){f=FACILITIES[j];break;}}
+      checks[i].checked=f&&f.type===mode;
+    }
+  }
+  renderTS();
+}
+
+// ════════════════════════════════════════
+// 20. SERIAL
+// ════════════════════════════════════════
+var serialPort=null,serialReader=null;
+async function connectSerial(){
+  if(!('serial' in navigator)){document.getElementById('modal').classList.add('show');return;}
+  try{
+    serialPort=await navigator.serial.requestPort();
+    await serialPort.open({baudRate:9600});
+    document.getElementById('btn-serial').disabled=true;
+    document.getElementById('serial-bar').style.display='flex';
+    document.getElementById('sdot').style.background='var(--teal)';
+    document.getElementById('sdot').style.boxShadow='0 0 5px var(--teal)';
+    document.getElementById('stext').textContent='\u63A5\u7D9A\u4E2D';
+    readSerial();
+  }catch(e){if(e.name!=='NotSelectedError')alert('\u63A5\u7D9A\u30A8\u30E9\u30FC: '+e.message);}
+}
+async function readSerial(){
+  var dec=new TextDecoderStream();serialPort.readable.pipeTo(dec.writable);
+  var reader=dec.readable.getReader();serialReader=reader;var buf='';
+  while(true){try{
+    var result=await reader.read();if(result.done)break;
+    buf+=result.value;var lines=buf.split('\n');buf=lines.pop();
+    lines.forEach(function(line){
+      var v=parseFloat(line.trim());if(!isNaN(v)){
+        var id=document.getElementById('sel-fac').value;
+        var key=document.getElementById('sel-sensor').value;
+        sensorData[id][key]=v;refreshAll();
+      }
+    });
+  }catch(e){break;}}
+}
+async function disconnectSerial(){
+  if(serialReader){try{await serialReader.cancel();}catch(e){}serialReader=null;}
+  if(serialPort){try{await serialPort.close();}catch(e){}serialPort=null;}
+  document.getElementById('btn-serial').disabled=false;
+  document.getElementById('serial-bar').style.display='none';
+  document.getElementById('sdot').style.background='var(--orange)';
+  document.getElementById('sdot').style.boxShadow='0 0 5px var(--orange)';
+  document.getElementById('stext').textContent='\u30C7\u30E2\u30E2\u30FC\u30C9';
+}
+
+// ════════════════════════════════════════
+// 21. REFRESH ALL
+// ════════════════════════════════════════
+function refreshAll(){
+  FACILITIES.forEach(function(f){
+    markers[f.id].setIcon(makeIcon(f));
+    if(markers[f.id].isPopupOpen())markers[f.id].setPopupContent(buildPopup(f));
+  });
+  renderCards();updateMetrics();
+  document.getElementById('stime').textContent=new Date().toLocaleTimeString('ja-JP');
+  refreshActiveDS();
+}
+
+// ════════════════════════════════════════
+// 22. INIT
+// ════════════════════════════════════════
+var selFac=document.getElementById('sel-fac');
+FACILITIES.forEach(function(f){
+  var o=document.createElement('option');o.value=f.id;
+  o.textContent=f.type+' '+shortName(f.name);
+  selFac.appendChild(o);
+});
+generateAllDemoData();
+applySeasonTime();
+buildTSChecks();
+refreshAll();
+</script>
+</body>
+</html>
