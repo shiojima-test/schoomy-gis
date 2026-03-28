@@ -497,6 +497,10 @@ function buildPopup(f){
     (sc!==null?sc:'\u2014')+'点</span></div></div><div class="pb">'+bars+'</div></div>';
 }
 
+// Pre-generate data before creating markers
+generateAllDemoData();
+applySeasonTime();
+
 FACILITIES.forEach(function(f){
   var m=L.marker([f.lat,f.lng],{icon:makeIcon(f)}).addTo(map);
   m.bindPopup(buildPopup(f),{maxWidth:280});
@@ -1000,8 +1004,6 @@ FACILITIES.forEach(function(f){
   o.textContent=f.type+' '+shortName(f.name);
   selFac.appendChild(o);
 });
-generateAllDemoData();
-applySeasonTime();
 buildTSChecks();
 refreshAll();
 </script>
