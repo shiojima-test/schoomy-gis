@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>利用マニュアル — SchooMy 学校環境比較マップ v4</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Syne:wght@700;800&display=swap');
+:root {
+  --navy: #1E3060;
+  --navy2: #162548;
+  --mid: #2F6EB5;
+  --ice: #5B9BD5;
+  --bg: #f0f4f8;
+  --panel: #fff;
+  --border: #dde4ec;
+  --text: #1a2433;
+  --text2: #4a6080;
+  --text3: #8faabb;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans JP','Meiryo',sans-serif; background:var(--bg); color:var(--text); line-height:1.8; }
+
+.hero {
+  background: linear-gradient(135deg, var(--navy), var(--navy2));
+  color: #fff;
+  padding: 48px 24px 40px;
+  text-align: center;
+}
+.hero h1 { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; letter-spacing:.04em; margin-bottom:8px; }
+.hero p { font-size:14px; opacity:.8; }
+.hero .ver { display:inline-block; background:rgba(255,255,255,.15); padding:3px 12px; border-radius:20px; font-size:11px; margin-top:10px; }
+
+.container { max-width:820px; margin:0 auto; padding:24px 20px 60px; }
+
+.toc { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:20px 24px; margin-bottom:32px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+.toc h2 { font-size:14px; font-weight:700; color:var(--navy); margin-bottom:12px; }
+.toc ol { padding-left:20px; }
+.toc li { margin-bottom:6px; }
+.toc a { color:var(--mid); text-decoration:none; font-size:13px; font-weight:500; }
+.toc a:hover { text-decoration:underline; }
+
+section { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+section h2 { font-size:18px; font-weight:700; color:var(--navy); margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid var(--ice); display:flex; align-items:center; gap:8px; }
+section h3 { font-size:14px; font-weight:700; color:var(--mid); margin:16px 0 8px; }
+p { font-size:13px; margin-bottom:10px; }
+ul, ol { font-size:13px; padding-left:22px; margin-bottom:12px; }
+li { margin-bottom:4px; }
+
+.badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:10px; font-weight:700; }
+.badge-navy { background:var(--navy); color:#fff; }
+.badge-mid { background:var(--mid); color:#fff; }
+.badge-ice { background:var(--ice); color:#fff; }
+.badge-red { background:#e55a4e; color:#fff; }
+.badge-orange { background:#E88A0A; color:#fff; }
+
+.color-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.color-chip { width:28px; height:28px; border-radius:6px; flex-shrink:0; border:1px solid rgba(0,0,0,.1); }
+.color-info { font-size:12px; }
+.color-info strong { font-size:13px; }
+
+.score-table { width:100%; border-collapse:collapse; margin:12px 0; font-size:12px; }
+.score-table th { background:var(--navy); color:#fff; padding:8px 12px; text-align:left; font-weight:700; }
+.score-table td { padding:8px 12px; border-bottom:1px solid var(--border); }
+.score-table tr:last-child td { border-bottom:none; }
+
+.step-grid { display:grid; grid-template-columns:40px 1fr; gap:6px 12px; margin:12px 0; }
+.step-num { width:32px; height:32px; border-radius:50%; background:var(--navy); color:#fff; font-family:'Syne',sans-serif; font-weight:800; font-size:14px; display:flex; align-items:center; justify-content:center; }
+.step-text { font-size:13px; padding-top:5px; }
+
+.tip { background:rgba(30,48,96,.06); border-left:3px solid var(--navy); padding:10px 14px; border-radius:0 8px 8px 0; margin:12px 0; font-size:12px; }
+.tip strong { color:var(--navy); }
+
+.warn { background:rgba(229,90,78,.06); border-left:3px solid #e55a4e; padding:10px 14px; border-radius:0 8px 8px 0; margin:12px 0; font-size:12px; }
+.warn strong { color:#e55a4e; }
+
+.img-placeholder { background:var(--bg); border:2px dashed var(--border); border-radius:10px; padding:24px; text-align:center; color:var(--text3); font-size:12px; margin:12px 0; }
+
+.footer { text-align:center; padding:24px; font-size:11px; color:var(--text3); }
+.footer a { color:var(--mid); }
+
+.kbd { display:inline-block; background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:1px 6px; font-size:11px; font-family:monospace; }
+
+.flex-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0; }
+.mini-card { background:var(--bg); border-radius:8px; padding:12px; }
+.mini-card h4 { font-size:12px; font-weight:700; color:var(--navy); margin-bottom:4px; }
+.mini-card p { font-size:11px; margin:0; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>SchooMy 学校環境比較マップ</h1>
+  <p>利用マニュアル・操作ガイド</p>
+  <span class="ver">Version 4 — 静岡サレジオ高校 × インドネシア</span>
+</div>
+
+<div class="container">
+
+<!-- 目次 -->
+<div class="toc">
+  <h2>目次</h2>
+  <ol>
+    <li><a href="#overview">このツールについて</a></li>
+    <li><a href="#access">アクセス方法</a></li>
+    <li><a href="#screen">画面の構成</a></li>
+    <li><a href="#pov">視点（POV）の切り替え</a></li>
+    <li><a href="#map">マップの操作</a></li>
+    <li><a href="#sidebar">サイドバーの使い方</a></li>
+    <li><a href="#comfort">快適基準の調整</a></li>
+    <li><a href="#scoring">スコアの仕組み</a></li>
+    <li><a href="#compare">比較パネル</a></li>
+    <li><a href="#serial">センサー接続（Web Serial）</a></li>
+    <li><a href="#demo">デモモード</a></li>
+    <li><a href="#colors">カラーテーマ</a></li>
+    <li><a href="#faq">よくある質問</a></li>
+  </ol>
+</div>
+
+<!-- 1. 概要 -->
+<section id="overview">
+  <h2>1. このツールについて</h2>
+  <p>SchooMy 学校環境比較マップは、日本とインドネシアの学校の教室環境（温度・湿度・照度・騒音）をリアルタイムで可視化・比較するWebアプリケーションです。</p>
+  <p>SchooMyオレンジボード（Arduino互換マイコン）から取得したセンサーデータを地図上にマッピングし、それぞれの国の「快適基準」に基づいてスコアリングします。</p>
+
+  <h3>主な機能</h3>
+  <ul>
+    <li>日本3校・インドネシア11校の環境データをリアルタイム表示</li>
+    <li>日本目線 / インドネシア目線 / 両方の3つの視点で評価を切り替え</li>
+    <li>各国の「快適」の基準値をスライダーでカスタマイズ可能</li>
+    <li>SchooMyオレンジボードとUSB接続してリアルデータを取得</li>
+    <li>デモモードでセンサーなしでも動作確認可能</li>
+  </ul>
+</section>
+
+<!-- 2. アクセス方法 -->
+<section id="access">
+  <h2>2. アクセス方法</h2>
+  <p>Webブラウザで以下のURLにアクセスしてください。</p>
+  <p style="background:var(--bg);padding:10px 14px;border-radius:8px;font-family:monospace;font-size:12px;word-break:break-all;">
+    https://shiojima-test.github.io/schoomy-gis/schoomy_comfort_v4.html
+  </p>
+
+  <h3>推奨環境</h3>
+  <ul>
+    <li><strong>ブラウザ:</strong> Google Chrome（最新版）を推奨</li>
+    <li><strong>センサー接続:</strong> Web Serial APIに対応したブラウザが必要（Chrome / Edge）</li>
+    <li><strong>画面サイズ:</strong> デスクトップ推奨（1280px以上）</li>
+  </ul>
+
+  <div class="tip">
+    <strong>ヒント:</strong> センサーを接続しなくてもデモモードで全機能を体験できます。まずはデモモードで操作に慣れましょう。
+  </div>
+</section>
+
+<!-- 3. 画面の構成 -->
+<section id="screen">
+  <h2>3. 画面の構成</h2>
+  <p>画面は大きく4つのエリアに分かれています。</p>
+
+  <div class="flex-cards">
+    <div class="mini-card">
+      <h4>A. ヘッダー</h4>
+      <p>タイトルと視点（POV）切り替えボタン。日本目線・インドネシア目線・両方の3つから選択できます。</p>
+    </div>
+    <div class="mini-card">
+      <h4>B. ステータスバー</h4>
+      <p>現在の接続状態（停止中 / デモモード / センサー接続中）と最終更新時刻を表示します。</p>
+    </div>
+    <div class="mini-card">
+      <h4>C. サイドバー（左側）</h4>
+      <p>学校一覧・快適基準設定・センサー接続の3つのタブがあります。</p>
+    </div>
+    <div class="mini-card">
+      <h4>D. マップ（右側）</h4>
+      <p>Leaflet.jsによるインタラクティブ地図。各学校がマーカーで表示されます。</p>
+    </div>
+  </div>
+
+  <p>画面下部には<strong>比較パネル</strong>があり、日本校とインドネシア校の平均値を比較できます。</p>
+</section>
+
+<!-- 4. 視点の切り替え -->
+<section id="pov">
+  <h2>4. 視点（POV）の切り替え</h2>
+  <p>ヘッダー右側の3つのボタンで、環境スコアの評価基準を切り替えます。</p>
+
+  <table class="score-table">
+    <tr><th>ボタン</th><th>モード</th><th>意味</th></tr>
+    <tr>
+      <td><span class="badge" style="background:#e8526a;color:#fff;">🇯🇵 日本目線</span></td>
+      <td>JP</td>
+      <td>全ての学校を<strong>日本の快適基準</strong>で評価。インドネシアの学校も日本基準で採点されます。</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#3A9BE8;color:#fff;">🇮🇩 インドネシア目線</span></td>
+      <td>ID</td>
+      <td>全ての学校を<strong>インドネシアの快適基準</strong>で評価。日本の学校もインドネシア基準で採点されます。</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:linear-gradient(90deg,#e8526a,#3A9BE8);color:#fff;">🌏 両方</span></td>
+      <td>BOTH</td>
+      <td>各学校に対して<strong>両国の基準でのスコアを並べて表示</strong>。マーカーにも2つのスコアが表示されます。</td>
+    </tr>
+  </table>
+
+  <div class="tip">
+    <strong>教育活用のポイント:</strong> 「日本では快適だけどインドネシアでは不快」「同じ教室でも評価が変わる」という気づきを通じて、文化的背景による快適性の違いを学べます。
+  </div>
+</section>
+
+<!-- 5. マップの操作 -->
+<section id="map">
+  <h2>5. マップの操作</h2>
+
+  <h3>基本操作</h3>
+  <ul>
+    <li><strong>ズーム:</strong> マウスホイール or 画面左上の +/- ボタン</li>
+    <li><strong>移動:</strong> マウスでドラッグ</li>
+    <li><strong>学校の詳細:</strong> マーカーをクリックするとポップアップが開きます</li>
+  </ul>
+
+  <h3>マーカーの見方</h3>
+  <p>各学校は丸いマーカーで表示されます。マーカーの色は快適スコアに連動しています。</p>
+  <ul>
+    <li><span class="badge badge-navy">75〜</span> 快適</li>
+    <li><span class="badge badge-mid">55〜75</span> 良好</li>
+    <li><span class="badge badge-ice">35〜55</span> 普通</li>
+    <li><span class="badge badge-red">〜35</span> 不快</li>
+  </ul>
+  <p>「両方」モードでは、マーカー内に🇯🇵スコアと🇮🇩スコアが上下に表示されます。</p>
+
+  <h3>ポップアップの内容</h3>
+  <p>マーカーをクリックすると、その学校の詳細情報が表示されます。</p>
+  <ul>
+    <li>学校名・所在地</li>
+    <li>日本基準スコア / インドネシア基準スコア</li>
+    <li>4つのセンサー値（温度・湿度・照度・騒音）</li>
+    <li>各センサーの快適範囲と現在値のバー表示</li>
+  </ul>
+</section>
+
+<!-- 6. サイドバー -->
+<section id="sidebar">
+  <h2>6. サイドバーの使い方</h2>
+
+  <h3>🏫 学校タブ</h3>
+  <p>登録されている全14校が一覧表示されます。日本校とインドネシア校がグループ分けされています。</p>
+  <ul>
+    <li>各カードには学校名・地域・4つのセンサーバー・総合スコアリングが表示されます</li>
+    <li>カードをクリックすると、地図がその学校にズームしてポップアップが開きます</li>
+  </ul>
+  <p>上部には現在の視点での統計情報（平均スコア・データ取得校数など）が表示されます。</p>
+
+  <h3>🎛 基準タブ</h3>
+  <p>日本とインドネシアの快適基準をそれぞれ調整できます。詳しくは<a href="#comfort">快適基準の調整</a>を参照してください。</p>
+
+  <h3>📡 接続タブ</h3>
+  <p>SchooMyオレンジボードとのUSBシリアル接続を管理します。詳しくは<a href="#serial">センサー接続</a>を参照してください。</p>
+</section>
+
+<!-- 7. 快適基準 -->
+<section id="comfort">
+  <h2>7. 快適基準の調整</h2>
+  <p>サイドバーの「🎛 基準」タブでは、各国の快適範囲をスライダーで調整できます。</p>
+
+  <h3>デフォルト値</h3>
+  <table class="score-table">
+    <tr><th>センサー</th><th>🇯🇵 日本の快適範囲</th><th>🇮🇩 インドネシアの快適範囲</th></tr>
+    <tr><td>🌡 温度</td><td>20〜26 ℃</td><td>26〜33 ℃</td></tr>
+    <tr><td>💧 湿度</td><td>40〜60 %</td><td>55〜82 %</td></tr>
+    <tr><td>💡 照度</td><td>300〜700 lx</td><td>400〜1000 lx</td></tr>
+    <tr><td>🔊 騒音</td><td>35〜55 dB</td><td>42〜68 dB</td></tr>
+  </table>
+
+  <p>スライダーを動かすと、リアルタイムで全学校のスコアが再計算されます。</p>
+
+  <h3>比較インサイト</h3>
+  <p>基準タブの下部には、各センサーについて日本とインドネシアの快適範囲の違いが視覚的に比較表示されます。「高い範囲を好む」「重なりが大きい」など、一目で違いが分かります。</p>
+</section>
+
+<!-- 8. スコアの仕組み -->
+<section id="scoring">
+  <h2>8. スコアの仕組み</h2>
+  <p>快適スコアは0〜100の範囲で計算され、以下のロジックに基づいています。</p>
+
+  <h3>計算方法</h3>
+  <ol>
+    <li>選択された視点（日本 or インドネシア）の快適範囲の<strong>中央値</strong>を理想値とする</li>
+    <li>実測値と理想値の差を計算</li>
+    <li>快適範囲の幅の2倍を超えると0点になるように正規化</li>
+    <li>4つのセンサーの平均を総合スコアとする</li>
+  </ol>
+
+  <h3>スコアと評価</h3>
+  <table class="score-table">
+    <tr><th>スコア</th><th>色</th><th>評価</th><th>意味</th></tr>
+    <tr>
+      <td>80〜100</td>
+      <td><span class="badge badge-navy">サレジオネイビー</span></td>
+      <td>😊 快適</td>
+      <td>快適範囲の中心に近い理想的な環境</td>
+    </tr>
+    <tr>
+      <td>55〜79</td>
+      <td><span class="badge badge-mid">ミッドブルー</span></td>
+      <td>🙂 良好</td>
+      <td>概ね快適な環境</td>
+    </tr>
+    <tr>
+      <td>35〜54</td>
+      <td><span class="badge badge-ice">アイスブルー</span></td>
+      <td>😐 普通</td>
+      <td>快適範囲から少し外れた環境</td>
+    </tr>
+    <tr>
+      <td>0〜34</td>
+      <td><span class="badge badge-red">レッド</span></td>
+      <td>😓 不快</td>
+      <td>快適範囲から大きく外れた環境</td>
+    </tr>
+  </table>
+</section>
+
+<!-- 9. 比較パネル -->
+<section id="compare">
+  <h2>9. 比較パネル</h2>
+  <p>画面下部の「比較パネル ▲」をクリックすると、日本校とインドネシア校の平均値を比較するパネルが表示されます。</p>
+
+  <h3>表示される項目</h3>
+  <ul>
+    <li><strong>温度・湿度・照度・騒音:</strong> 各国の平均値と差分</li>
+    <li><strong>総合スコア:</strong> 現在の視点での各国の平均快適スコアと差分</li>
+  </ul>
+
+  <p>差分が正の場合は日本が高く、負の場合はインドネシアが高いことを示します。</p>
+</section>
+
+<!-- 10. センサー接続 -->
+<section id="serial">
+  <h2>10. センサー接続（Web Serial）</h2>
+  <p>SchooMyオレンジボード（Arduino互換）からリアルタイムでセンサーデータを取得できます。</p>
+
+  <h3>接続手順</h3>
+  <div class="step-grid">
+    <div class="step-num">1</div>
+    <div class="step-text">SchooMyオレンジボードにセンサーを接続し、USBケーブルでPCに繋ぎます</div>
+    <div class="step-num">2</div>
+    <div class="step-text">サイドバーの「📡 接続」タブを開きます</div>
+    <div class="step-num">3</div>
+    <div class="step-text">「🔌 シリアル接続」ボタンをクリックします</div>
+    <div class="step-num">4</div>
+    <div class="step-text">ブラウザのダイアログでデバイスを選択し「接続」をクリック</div>
+    <div class="step-num">5</div>
+    <div class="step-text">接続先の学校とセンサー種別をドロップダウンで選択します</div>
+    <div class="step-num">6</div>
+    <div class="step-text">データが自動で受信され、リアルタイムでマップに反映されます</div>
+  </div>
+
+  <div class="warn">
+    <strong>注意:</strong> Web Serial APIはGoogle Chrome / Microsoft Edgeのみ対応しています。Safari / Firefoxでは利用できません。
+  </div>
+
+  <h3>通信仕様</h3>
+  <ul>
+    <li><strong>ボーレート:</strong> 9600 bps</li>
+    <li><strong>データ形式:</strong> 1行に1つの数値（改行区切り）</li>
+    <li><strong>例:</strong> <span class="kbd">25.3</span>（温度）、<span class="kbd">62.1</span>（湿度）など</li>
+  </ul>
+
+  <h3>切断</h3>
+  <p>「🔌 切断」ボタンをクリックするとシリアル接続を解除します。</p>
+</section>
+
+<!-- 11. デモモード -->
+<section id="demo">
+  <h2>11. デモモード</h2>
+  <p>センサーを接続していなくても、デモモードで動作を確認できます。</p>
+
+  <h3>使い方</h3>
+  <ul>
+    <li>サイドバーの「📡 接続」タブを開き、「▶ デモ ON」ボタンをクリック</li>
+    <li>全14校にランダムなセンサーデータが生成されます</li>
+    <li>2秒ごとにデータが微小に変動し、リアルタイム更新を体験できます</li>
+    <li>「⏹ デモ OFF」で停止します</li>
+  </ul>
+
+  <h3>デモデータの範囲</h3>
+  <table class="score-table">
+    <tr><th>センサー</th><th>🇯🇵 日本校</th><th>🇮🇩 インドネシア校</th></tr>
+    <tr><td>🌡 温度</td><td>17〜24 ℃</td><td>27〜35 ℃</td></tr>
+    <tr><td>💧 湿度</td><td>33〜55 %</td><td>60〜88 %</td></tr>
+    <tr><td>💡 照度</td><td>280〜680 lx</td><td>480〜1100 lx</td></tr>
+    <tr><td>🔊 騒音</td><td>36〜53 dB</td><td>46〜70 dB</td></tr>
+  </table>
+
+  <div class="tip">
+    <strong>ヒント:</strong> ページを開くと自動的にデモモードが開始されます。センサーを接続するとデモは自動停止します。
+  </div>
+</section>
+
+<!-- 12. カラーテーマ -->
+<section id="colors">
+  <h2>12. カラーテーマ</h2>
+  <p>本アプリケーションは静岡サレジオ高校のスクールカラーに基づいたカラーテーマを使用しています。</p>
+
+  <div class="color-row">
+    <div class="color-chip" style="background:#1E3060;"></div>
+    <div class="color-info"><strong>サレジオネイビー #1E3060</strong><br>メインアクセント・最高評価（快適）</div>
+  </div>
+  <div class="color-row">
+    <div class="color-chip" style="background:#2F6EB5;"></div>
+    <div class="color-info"><strong>ミッドブルー #2F6EB5</strong><br>良好スコア（55〜75）</div>
+  </div>
+  <div class="color-row">
+    <div class="color-chip" style="background:#5B9BD5;"></div>
+    <div class="color-info"><strong>アイスブルー #5B9BD5</strong><br>普通スコア（35〜55）</div>
+  </div>
+  <div class="color-row">
+    <div class="color-chip" style="background:#e55a4e;"></div>
+    <div class="color-info"><strong>レッド #e55a4e</strong><br>不快スコア（〜35）</div>
+  </div>
+  <div class="color-row">
+    <div class="color-chip" style="background:#e8526a;"></div>
+    <div class="color-info"><strong>ジャパンピンク #e8526a</strong><br>日本目線インジケーター</div>
+  </div>
+  <div class="color-row">
+    <div class="color-chip" style="background:#3A9BE8;"></div>
+    <div class="color-info"><strong>インドネシアブルー #3A9BE8</strong><br>インドネシア目線インジケーター</div>
+  </div>
+</section>
+
+<!-- 13. FAQ -->
+<section id="faq">
+  <h2>13. よくある質問</h2>
+
+  <h3>Q. スマートフォンで使えますか？</h3>
+  <p>表示は可能ですが、画面サイズの関係上デスクトップでの利用を推奨します。また、スマートフォンではWeb Serial API（センサー接続）が利用できません。</p>
+
+  <h3>Q. センサーを接続しないと何も表示されませんか？</h3>
+  <p>デモモードを使えば、シミュレートされたデータで全機能を体験できます。ページを開くと自動的にデモモードが開始されます。</p>
+
+  <h3>Q. 学校を追加できますか？</h3>
+  <p>現在はHTMLファイル内のJavaScriptコードに学校データが定義されています。技術的な知識があれば、<code>SCHOOLS</code>配列に新しい学校を追加できます。</p>
+
+  <h3>Q. 快適基準を変えたら元に戻せますか？</h3>
+  <p>ページをリロードすると、全ての設定がデフォルト値にリセットされます。</p>
+
+  <h3>Q. 複数のセンサーを同時に接続できますか？</h3>
+  <p>現在のバージョンでは1つのシリアルポートのみ接続可能です。接続先の学校・センサー種別はドロップダウンで切り替えます。</p>
+
+  <h3>Q. データは保存されますか？</h3>
+  <p>現在のバージョンではデータの永続化機能はありません。ページを閉じるとデータはリセットされます。</p>
+</section>
+
+</div>
+
+<div class="footer">
+  <p>SchooMy 学校環境比較マップ v4 — <a href="schoomy_comfort_v4.html">アプリに戻る</a></p>
+  <p>Powered by Leaflet.js / OpenStreetMap / Web Serial API</p>
+</div>
+
+</body>
+</html>

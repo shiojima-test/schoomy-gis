@@ -11,7 +11,7 @@
 :root {
   --bg:#f0f4f8; --panel:#fff; --panel2:#f5f8fb; --border:#dde4ec;
   --text:#1a2433; --text2:#4a6080; --text3:#8faabb;
-  --teal:#3AABA8; --teal2:#2a8a87; --teal-bg:rgba(58,171,168,.09);
+  --teal:#1E3060; --teal2:#162548; --teal-bg:rgba(30,48,96,.09);
   --orange:#E88A0A; --jp:#e8526a; --jp-bg:rgba(232,82,106,.1);
   --id:#3A9BE8;   --id-bg:rgba(58,155,232,.1);
   --shadow:0 4px 20px rgba(0,0,0,.10);
@@ -33,7 +33,7 @@ header{height:56px;background:var(--panel);border-bottom:1px solid var(--border)
 .pov-btn{padding:5px 13px;border:none;border-radius:24px;cursor:pointer;font-size:12px;font-weight:700;font-family:'Noto Sans JP',sans-serif;transition:all .2s;color:var(--text3);background:transparent;white-space:nowrap;}
 .pov-btn.on-jp{background:var(--jp);color:#fff;box-shadow:0 2px 10px rgba(232,82,106,.4);}
 .pov-btn.on-id{background:var(--id);color:#fff;box-shadow:0 2px 10px rgba(58,155,232,.4);}
-.pov-btn.on-both{background:linear-gradient(90deg,var(--jp),var(--id));color:#fff;box-shadow:0 2px 10px rgba(58,171,168,.3);}
+.pov-btn.on-both{background:linear-gradient(90deg,var(--jp),var(--id));color:#fff;box-shadow:0 2px 10px rgba(30,48,96,.3);}
 
 /* POV STRIP */
 .pov-strip{padding:5px 14px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px;border-bottom:2.5px solid var(--pov-color);background:var(--pov-bg);transition:all .3s;flex-shrink:0;}
@@ -113,7 +113,7 @@ input[type=range].id-sl::-webkit-slider-thumb{background:var(--id);}
 /* SERIAL */
 .serial-inner{padding:12px 13px;}
 .btn{padding:8px 12px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-family:'Noto Sans JP',sans-serif;font-weight:700;transition:all .15s;width:100%;margin-bottom:5px;}
-.btn-teal{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(58,171,168,.3);}
+.btn-teal{background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(30,48,96,.3);}
 .btn-teal:hover{background:var(--teal2);}
 .btn-teal:disabled{opacity:.4;cursor:not-allowed;}
 .btn-red{background:var(--jp-bg);color:var(--jp);border:1px solid rgba(232,82,106,.25);}
@@ -305,7 +305,7 @@ var POV_META = {
   ID:   { color:'#3A9BE8', bg:'rgba(58,155,232,.08)',  icon:'🇮🇩',
           label:'インドネシアの快適基準で全校を評価中',
           desc:'— 日本の学校もインドネシアの「快適」で採点されます' },
-  BOTH: { color:'#3AABA8', bg:'rgba(58,171,168,.08)',  icon:'🌏',
+  BOTH: { color:'#1E3060', bg:'rgba(30,48,96,.08)',  icon:'🌏',
           label:'日本・インドネシア両方の視点で比較中',
           desc:'— 左が🇯🇵スコア、右が🇮🇩スコアです' }
 };
@@ -371,9 +371,9 @@ function calcScore(schoolId, fromCtry) {
 
 function scoreColor(s) {
   if (s === null) return '#b0c4d4';
-  if (s >= 75) return '#3AABA8';
-  if (s >= 55) return '#5dc573';
-  if (s >= 35) return '#f0c040';
+  if (s >= 75) return '#1E3060';
+  if (s >= 55) return '#2F6EB5';
+  if (s >= 35) return '#5B9BD5';
   return '#e55a4e';
 }
 
@@ -402,9 +402,9 @@ function renderLegend() {
     var m = POV_META[pov];
     d.innerHTML =
       '<div class="ml-title" style="color:'+m.color+'">'+m.icon+' 快適スコア</div>' +
-      '<div class="ml-row"><div class="ml-dot" style="background:#3AABA8"></div>75〜 快適</div>' +
-      '<div class="ml-row"><div class="ml-dot" style="background:#5dc573"></div>55〜75 良好</div>' +
-      '<div class="ml-row"><div class="ml-dot" style="background:#f0c040"></div>35〜55 普通</div>' +
+      '<div class="ml-row"><div class="ml-dot" style="background:#1E3060"></div>75〜 快適</div>' +
+      '<div class="ml-row"><div class="ml-dot" style="background:#2F6EB5"></div>55〜75 良好</div>' +
+      '<div class="ml-row"><div class="ml-dot" style="background:#5B9BD5"></div>35〜55 普通</div>' +
       '<div class="ml-row"><div class="ml-dot" style="background:#e55a4e"></div>〜35 不快</div>' +
       '<div class="ml-sep"></div>' +
       '<div style="font-size:9px;color:var(--text3);font-style:italic">'+m.label+'</div>' +
